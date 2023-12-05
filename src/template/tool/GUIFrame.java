@@ -76,15 +76,30 @@ public class GUIFrame extends JFrame implements ActionListener{
 	public void actionPerformed(ActionEvent e) {
 		switch (e.getActionCommand()) {       
 	        case "bUndo":
-	        	ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
-	        	codeHistory.add(editorLines.get(editorLines.size()-1));
-	        	editorLines.remove(editorLines.size()-1);
-	        	base.getActiveEditor().setText("");
-	        	for (int i = 0; i < editorLines.size(); i++) {
-	        		p.updateCode(editorLines.get(i));
+	        	if (p.shapes.size() != 0) {
+		        	ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
+		        	codeHistory.add(editorLines.get(editorLines.size()-1));
+		        	editorLines.remove(editorLines.size()-1);
+		        	base.getActiveEditor().setText("");
+		        	for (int i = 0; i < editorLines.size(); i++) {
+		        		if (editorLines.get(i) != "") {
+		        			p.updateCode(editorLines.get(i));	
+		        		}
+		        	}
+		        	p.shapeHistory.add(p.shapes.get(p.shapes.size()-1));
+		        	p.shapes.remove(p.shapes.size()-1);
+		        	p.repaint();
 	        	}
-	        	p.shapes.remove(p.shapes.size()-1);
-	        	p.repaint();
+	        	break;
+	        
+	        case "bRedo":
+	        	if (p.shapeHistory.size() != 0) {
+		        	p.updateCode(codeHistory.get(codeHistory.size()-1)); 
+		        	codeHistory.remove(codeHistory.size()-1);
+		        	p.shapes.add(p.shapeHistory.get(p.shapeHistory.size()-1));
+		        	p.shapeHistory.remove(p.shapeHistory.size()-1);
+		        	p.repaint();
+	        	}
 	        	break;
 	        
 	        default:
@@ -97,6 +112,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 class MyPanel extends JPanel implements MouseListener{
 	
 	public ArrayList<Shape> shapes = new ArrayList<Shape>();
+	public ArrayList<Shape> shapeHistory = new ArrayList<Shape>();
 	String currentEvent = "";
 	Point firstPoint = new Point(0,0);
 	MyPanel panel;
@@ -164,6 +180,9 @@ class MyPanel extends JPanel implements MouseListener{
 
     	int smallX = ((x1>x2) ? x2 : x1);
     	int smallY = ((y1>y2) ? y2 : y1);
+    	
+    	int bigX = ((x2>x1) ? x2 : x1);
+    	int bigY = ((y2>y1) ? y2 : y1);
 		switch (currentEvent) {
 	        case "bRect":
 	        	updateCode("rect(" + x1 + ", " + y1 + ", " + Math.abs(x1-x2) + ", " + Math.abs(y1-y2) + ");");
@@ -187,13 +206,12 @@ class MyPanel extends JPanel implements MouseListener{
 	        	double endAngle = Math.PI;
 	        	updateCode("arc(" + (int)((x1+x2)/2) + ", " + (int)((y1+y2)/2) + ", " + Math.abs(x1-x2) + ", " + Math.abs(y1-y2) + ", " + (startAngle+Math.PI) + ", " + (endAngle+Math.PI) + ", PIE);");
 	        	addArc(smallX,smallY, Math.abs(x1-x2),Math.abs(y1-y2), (int)Math.toDegrees(startAngle), (int)Math.toDegrees(endAngle), Arc2D.PIE);
-	            System.out.print((int)Math.toDegrees(startAngle) + (int)Math.toDegrees(endAngle));
 	        	break;
 	 
 	        case "bQuad":
-	        	int[] xPos = {x1,x1+(int)(Math.abs(x1-x2)*0.75),x2,x1+(int)(Math.abs(x1-x2)*0.25)};
-	        	int[] yPos =  {y1,y1,y2,y2};
-	        	updateCode("quad(" + x1 + ", " + y1 + ", " + xPos[1] + ", " + y1 + ", " + xPos[2] + ", " + y2 + ", " + xPos[3] + ", " + y2 + ");");
+	        	int[] xPos = {smallX,smallX+(int)(Math.abs(x1-x2)*0.75),bigX,smallX+(int)(Math.abs(x1-x2)*0.25)};
+	        	int[] yPos =  {smallY,smallY,bigY,bigY};
+	        	updateCode("quad(" + xPos[0] + ", " + yPos[0] + ", " + xPos[1] + ", " + yPos[1] + ", " + xPos[2] + ", " + yPos[2] + ", " + xPos[3] + ", " + yPos[3] + ");");
 	        	addQuad(xPos, yPos);
 	            break;
 	 
