@@ -3,245 +3,334 @@ package template.tool;
 import javax.swing.*;
 import java.awt.*;
 import java.util.*;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Ellipse2D.Double;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Line2D;
 
+import javax.imageio.*;
+
+import java.awt.event.KeyAdapter;
+
+import java.awt.Cursor;
+
 import processing.app.Base;
 
 @SuppressWarnings("serial")
 public class GUIFrame extends JFrame implements ActionListener{
 	Base base;
-	String[] verticalButtons = {"bRect", "bEllipse", "bTriangle", "bArc", "bQuad", "bLine", "bPoint"};
-	String[] horizontalButtons = {"bSelect", "bFill", "bColour", "bUndo", "bRedo"};
-    ArrayList<String> codeHistory = new ArrayList<String>();
+	
+	//all button icons are souced from: https://www.svgrepo.com/
+	String[][] verticalButtons = {{"bRect", "Rectangle", "/data/rectangle-wide-svgrepo-com.png"}, 
+									{"bEllipse", "Ellipse", "/data/ellipse-figure-form-geometry-graphic-line-svgrepo-com.png"}, 
+									{"bTriangle", "Triangle", "/data/shape-triangle-figure-form-geometry-graphic-svgrepo-com.png"},
+									{"bArc", "Arc", "/data/circle-three-quarters-svgrepo-com.png"},
+									{"bQuad", "Quad", "/data/parallelogram-figure-form-geometry-graphic-line-svgrepo-com.png"},
+									{"bLine", "Line", "/data/line-tool-svgrepo-com.png"},
+									{"bPoint", "Point", "/data/dots-svgrepo-com.png"},
+									{"bText", "Text", "/data/text-svgrepo-com.png"}};
+	
+	String[][] horizontalButtons = {{"bFill", "Fill", "/data/fill-svgrepo-com.png"},
+									{"bColour", "Set colour", "/data/color-palette-svgrepo-com.png"},
+									{"bStrokeColour", "Set stroke colour", "/data/pen-line-svgrepo-com.png"},
+									{"bStrokeSize", "Set stroke size", "/data/stroke-width-svgrepo-com.png"},
+									{"bUndo", "Undo", "/data/undo-left-svgrepo-com.png"},
+									{"bRedo", "Redo", "/data/undo-right-svgrepo-com.png"},
+									{"bDelete", "Delete shape", "/data/delete-svgrepo-com.png"},
+									{"bUpdate", "Update drawing from code", "/data/update-svgrepo-com.png"},
+									{"bSelect", "Select shape", "/data/cursor-alt-svgrepo-com.png"}};
+	
+	Map<String, JButton> buttons = new HashMap<String, JButton>();
+	
+    Map<Integer,String> codeHistory = new HashMap<Integer,String>();
+    
     int[] canvasSize = {400,400};
     int backgroundColor = 255;
     int strokeColor = 0;
-    MyPanel p = new MyPanel(canvasSize[0], canvasSize[1]);
+    int currentStrokeSize = 1;
+    
+    GUIPanel p = new GUIPanel(canvasSize[0], canvasSize[1],this);
+    JPopupMenu strokeSelector = new JPopupMenu("StrokeSize");
+    JSlider strokeSize = new JSlider(0, 50, 1);
+    JFrame f = new JFrame("SketchToCode");
+    JButton confirmStroke = new JButton();
+    KeyListeners keyListeners = new KeyListeners(p,this);
 	
 	public void showGUI(Base base) { 
 		this.base = base;
 		p.base = base;
-		
-		JFrame f = new JFrame("SketchToCode");
+			
 		f.setLayout(new BorderLayout());
 		
-        JToolBar vtb = new JToolBar("Vertical tool bar", SwingConstants.VERTICAL);
+        JToolBar vtb = new JToolBar("Vertical toolbar", SwingConstants.VERTICAL);
         f.add(createToolBar(vtb, verticalButtons), BorderLayout.WEST);
         
-		JToolBar htb = new JToolBar("Horizontal tool bar", SwingConstants.HORIZONTAL);
+		JToolBar htb = new JToolBar("Horizontal toolbar", SwingConstants.HORIZONTAL);
 		f.add(createToolBar(htb, horizontalButtons), BorderLayout.NORTH);
+		
+
+	    f.addKeyListener(keyListeners);
 		
 		p.setBackground(Color.WHITE);
 		f.add(p);
 		
-	    f.setSize(canvasSize[0] + 20, canvasSize[1] + 20); 
-	    base.getActiveEditor().setText("size(" + canvasSize[0]+ ", " + canvasSize[1] + ");\n"
-	    	+ "background(" + backgroundColor + ");\n"
-	    	+ "noFill();\n"
-	    	+ "stroke(" + strokeColor + ");"
-	    );
+
+	    strokeSize.setMajorTickSpacing(10);
+	    strokeSize.setMinorTickSpacing(5);
+	    strokeSize.setPaintLabels(true);
+        strokeSelector.add(strokeSize);
+        JLabel label = new JLabel("OK");
+        confirmStroke.add(label);
+        confirmStroke.setActionCommand("confirmStroke");
+        confirmStroke.addActionListener(this);
+        strokeSelector.add(confirmStroke);
+		
+	    f.setSize(new Dimension(canvasSize[0] + 20, canvasSize[1] + 20));
+	    
+	    initEditor();
 	    
 	    f.setDefaultCloseOperation(DISPOSE_ON_CLOSE); 
+	    p.addComponentListener(new ComponentAdapter() {
+	    	    public void componentResized(ComponentEvent e){
+	    	    	updateSize(e.getComponent().getWidth(), e.getComponent().getHeight());
+	    		}
+	    });
 	    
 	    f.pack();
 	    f.setVisible(true); 
     }
 	
-	public JToolBar createToolBar(JToolBar tb, String[] buttonNames) { 
-        Map<String, JButton> buttons = new HashMap<String, JButton>();
-        
+	public void initEditor() {
+
+		ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
+		
+		if (editorLines.size() == 0) {
+	    	p.insertProcessingLine("background(" + backgroundColor + ");", 0);
+	    	p.insertProcessingLine("fill(250,250,250);", 1);
+	    	p.insertProcessingLine("stroke(" + strokeColor + ");", 2);
+	    }
+	    else if (editorLines.size() > 0) {
+		    if (!editorLines.contains("background(" + backgroundColor + ");")) {
+		    	p.insertProcessingLine("background(" + backgroundColor + ");", 1);
+		    }
+		    
+		    if (!editorLines.contains("fill(250,250,250);")) {
+		    	p.insertProcessingLine("fill(250,250,250);", 2);
+		    }
+		    
+		    if (!editorLines.contains("stroke(" + strokeColor + ");")) {
+		    	p.insertProcessingLine("stroke(" + strokeColor + ");", 3);
+		    }
+	    }
+	    
+	    updateDrawingFromCode(editorLines);
+	}
+	
+	public void updateSize(int width, int height) {
+		ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
+    	base.getActiveEditor().setText("size(" + width + ", " + height + ");");
+        for (int i = 1; i < editorLines.size(); i++) {
+    		p.updateCode(editorLines.get(i));
+    	}
+	}
+	
+	public JToolBar createToolBar(JToolBar tb, String[][] buttonNames) { 
         for (int i = 0; i < buttonNames.length; i++) {
-        	  buttons.put(buttonNames[i], new JButton());
-      		  JLabel label = new JLabel(buttonNames[i]);
-      		  buttons.get(buttonNames[i]).add(label);
-        	  buttons.get(buttonNames[i]).setActionCommand(buttonNames[i]);
-        	  buttons.get(buttonNames[i]).addActionListener(this);
-        	  tb.add(buttons.get(buttonNames[i]));
+        	  buttons.put(buttonNames[i][0], new JButton());
+        	  try {
+	        	  Image icon = ImageIO.read(getClass().getResource(buttonNames[i][2]));
+	        	  buttons.get(buttonNames[i][0]).setIcon(new ImageIcon(icon.getScaledInstance(20, 20,  java.awt.Image.SCALE_SMOOTH)));
+        	  } catch (Exception e) {
+        		    System.out.println(e);
+    		  }
+        	  buttons.get(buttonNames[i][0]).setActionCommand(buttonNames[i][0]);
+        	  buttons.get(buttonNames[i][0]).addActionListener(this);
+        	  buttons.get(buttonNames[i][0]).setToolTipText(buttonNames[i][1]);
+        	  buttons.get(buttonNames[i][0]).setPreferredSize(new Dimension(30, 30));
+        	  buttons.get(buttonNames[i][0]).setBackground(Color.LIGHT_GRAY);
+        	  buttons.get(buttonNames[i][0]).setOpaque(true);
+        	  tb.add(buttons.get(buttonNames[i][0]));
+        	  tb.setBackground(Color.LIGHT_GRAY);
+        	  tb.setOpaque(true);
         }
         
         return tb;
     }
 	
+	public void updateDrawingFromCode(ArrayList<String> editorLines) {
+		ArrayList<String> codeList = new ArrayList<String>();
+		for (ShapeBuilder shape: p.shapes) {
+			codeList.add(shape.processingShape);
+		}
+
+		for (String line: editorLines) {
+			if (!codeList.contains(line) || codeList.size() == 0) {
+				Color nextFill = Color.WHITE;
+				Color nextStrokeColour = Color.BLACK;
+				int nextStrokeSize = 1;
+				ShapeBuilder shapeToAdd = new ShapeBuilder(line, null, null);
+				if (shapeToAdd.javaShape != null) {
+					shapeToAdd.fill = nextFill;
+					shapeToAdd.stroke = nextStrokeColour;
+					shapeToAdd.strokeSize = nextStrokeSize;
+					p.shapes.add(shapeToAdd);
+				}
+				else if (line.contains("fill(")) {
+					String[] RGBValues = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",3);
+					nextFill = new Color(Integer.valueOf(RGBValues[0]), Integer.valueOf(RGBValues[1]), Integer.valueOf(RGBValues[2]));
+				}
+				else if (line.contains("stroke(")) {
+					String[] RGBValues = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",3);
+					if (RGBValues.length != 3) {
+						nextStrokeColour = new Color(Integer.valueOf(RGBValues[0]),Integer.valueOf(RGBValues[0]),Integer.valueOf(RGBValues[0]));
+					} else {
+						nextStrokeColour = new Color(Integer.valueOf(RGBValues[0]), Integer.valueOf(RGBValues[1]), Integer.valueOf(RGBValues[2]));
+					}
+				}
+				else if (line.contains("strokeWeight(")) {
+					nextStrokeSize = Integer.valueOf(line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0]);
+				}
+				else if (line.contains("background(")) {
+					String[] RGBValues = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",3);
+					if (RGBValues.length != 3) {
+						p.setBackground(new Color(Integer.valueOf(RGBValues[0]),Integer.valueOf(RGBValues[0]),Integer.valueOf(RGBValues[0])));
+					} else {
+						p.setBackground(new Color(Integer.valueOf(RGBValues[0]), Integer.valueOf(RGBValues[1]), Integer.valueOf(RGBValues[2])));
+					}
+				}
+				else if (line.contains("size(")) {
+					String[] size = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",2);
+					p.setMinimumSize(new Dimension(Integer.valueOf(size[0]),Integer.valueOf(size[1])));
+					f.setSize(new Dimension(Integer.valueOf(size[0])+20,Integer.valueOf(size[1])+20));
+					p.revalidate();
+				}	
+			}
+		}
+		p.repaint();
+		
+	}
+
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		switch (e.getActionCommand()) {       
+		switch (e.getActionCommand()) { 
+			case "bUpdate":
+				ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
+				updateDrawingFromCode(editorLines);
+				break;
 	        case "bUndo":
-	        	if (p.shapes.size() != 0) {
-		        	ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
-		        	codeHistory.add(editorLines.get(editorLines.size()-1));
-		        	editorLines.remove(editorLines.size()-1);
-		        	base.getActiveEditor().setText("");
-		        	for (int i = 0; i < editorLines.size(); i++) {
-		        		if (editorLines.get(i) != "") {
-		        			p.updateCode(editorLines.get(i));	
-		        		}
-		        	}
-		        	p.shapeHistory.add(p.shapes.get(p.shapes.size()-1));
-		        	p.shapes.remove(p.shapes.size()-1);
-		        	p.repaint();
-	        	}
+	        	keyListeners.callUndo();
 	        	break;
-	        
 	        case "bRedo":
-	        	if (p.shapeHistory.size() != 0) {
-		        	p.updateCode(codeHistory.get(codeHistory.size()-1)); 
-		        	codeHistory.remove(codeHistory.size()-1);
-		        	p.shapes.add(p.shapeHistory.get(p.shapeHistory.size()-1));
-		        	p.shapeHistory.remove(p.shapeHistory.size()-1);
+	        	keyListeners.callRedo();
+	        	break;
+	        case "bFill":
+	        	p.fill = JColorChooser.showDialog(this,"Select a color", Color.WHITE);
+	        	if (p.selectedShapes.size() != 0) {
+		        	p.changeFill(p.fill);
+		        	p.repaint();
+			        p.selectedShape = null;
+			        p.fill = null;
+	        	}
+	        	break;
+	        case "bColour":
+	        	Color color = JColorChooser.showDialog(this,"Select a color", Color.WHITE);
+	        	if (color != null) {
+		        	int[] newColor = {color.getRed(),color.getGreen(),color.getBlue()};	        	
+			        p.changeFill(color);        	
+			        p.repaint();
+			        p.selectedShape = null;
+	        	}
+	        	break;
+	        case "bStrokeColour":
+	        	Color strokeColor = JColorChooser.showDialog(this,"Select a color", Color.WHITE);
+	        	if (strokeColor != null) {
+		        	        	
+		    	    if (p.selectedShapes.size() != 0) {
+		    	    	int position = p.findProcessingShapeLine(p.selectedShape)-1;
+		    	    	p.selectedShape.stroke = strokeColor;
+		    	    	p.insertProcessingLine(p.selectedShape.getProcessingStroke(), position);
+		    	    	
+		    	    	if (p.shapes.indexOf(p.selectedShape)+1 < p.shapes.size()) {
+		    	    		ShapeBuilder nextShape = p.shapes.get(p.shapes.indexOf(p.selectedShape)+1);
+		    		    	int nextPosition = p.findProcessingShapeLine(nextShape)-1;
+		    		    	p.insertProcessingLine(nextShape.getProcessingStroke(), nextPosition);	    	    		
+		    	    	}
+		        	}
+		    	    else {
+		    	    	if (p.shapes.size() != 0) {
+		    	    		p.shapes.get(p.shapes.size()-1).stroke = strokeColor;
+		    	    	}
+	    	    		p.defaultStrokeColour = strokeColor;
+		    	    	p.updateCode("stroke(" + strokeColor.getRed() + ", " + strokeColor.getGreen() + ", " + strokeColor.getBlue() + ");");
+		    	    }
+		        	p.selectedShape = null;
 		        	p.repaint();
 	        	}
 	        	break;
-	        
-	        default:
-	            p.currentEvent = e.getActionCommand();
-		}
-	}
-}
-
-@SuppressWarnings("serial")
-class MyPanel extends JPanel implements MouseListener{
-	
-	public ArrayList<Shape> shapes = new ArrayList<Shape>();
-	public ArrayList<Shape> shapeHistory = new ArrayList<Shape>();
-	String currentEvent = "";
-	Point firstPoint = new Point(0,0);
-	MyPanel panel;
-	Base base;
-
-    public MyPanel(int height, int width) {
-    	setPreferredSize(new Dimension(height, width));
-    	addMouseListener(this); 
-    }
-    
-    public void paintComponent(Graphics g) {     
-        super.paintComponent(g);       
-        Graphics2D g2 = (Graphics2D) g;
-
-        g2.setColor(Color.BLACK);
-        for (Shape shape: shapes)
-        {
-        	g2.draw(shape);
-        }
-        g2.dispose();
-    }  
-    
-    public void addRect(int xPos, int yPos, int width, int height) {
-        shapes.add(new Rectangle(xPos,yPos,width,height));
-        repaint();
-    }
-    
-    public void addEllipse(int xPos, int yPos, int width, int height) {
-        shapes.add(new Ellipse2D.Double(xPos,yPos,width,height));
-        repaint();
-    }
-    
-    public void addTriangle(int[] xPos, int[] yPos) {
-        shapes.add(new Polygon(xPos,yPos,3));
-        repaint();
-    }
-    
-    public void addArc(int xPos, int yPos, int width, int height, int angle1, int angle2, int type) {
-        shapes.add(new Arc2D.Double(xPos, yPos, width, height, angle1, angle2, type));
-        repaint();
-    }
-    
-    public void addQuad(int[] xPos, int[] yPos) {
-        shapes.add(new Polygon(xPos,yPos,4));
-        repaint();
-    }
-    
-    public void addLine(int xPos1, int yPos1, int xPos2, int yPos2) {
-        shapes.add(new Line2D.Double(xPos1,yPos1,xPos2,yPos2));
-        repaint();
-    }
-    
-    public void mousePressed(MouseEvent e) {
-    	if (currentEvent != "") {
-		    firstPoint = e.getPoint();
-		}
-    }
-    
-    public void mouseReleased(MouseEvent e) {
-    	Point secondPoint = e.getPoint();
-    	int x1 = firstPoint.x;
-    	int x2 = secondPoint.x;
-    	int y1 = firstPoint.y;
-    	int y2 = secondPoint.y;
-
-    	int smallX = ((x1>x2) ? x2 : x1);
-    	int smallY = ((y1>y2) ? y2 : y1);
-    	
-    	int bigX = ((x2>x1) ? x2 : x1);
-    	int bigY = ((y2>y1) ? y2 : y1);
-		switch (currentEvent) {
-	        case "bRect":
-	        	updateCode("rect(" + x1 + ", " + y1 + ", " + Math.abs(x1-x2) + ", " + Math.abs(y1-y2) + ");");
-	        	addRect(x1,y1, Math.abs(x1-x2),Math.abs(y1-y2));
-	            break;
-	 
-	        case "bEllipse":
-	        	updateCode("ellipse(" + (int)((x1+x2)/2) + ", " + (int)((y1+y2)/2) + ", " + Math.abs(x1-x2) + ",  " + Math.abs(y1-y2) + ");");
-	        	addEllipse(smallX,smallY, Math.abs(x1-x2),Math.abs(y1-y2));
-	            break;
-	 
-	        case "bTriangle":
-	        	updateCode("triangle(" + x1 + ", " + y1 + ", " + Math.abs((2*x1)-x2) + ", " + y2 + ", " + x2 + ", " + y2 + ");");
-	        	int[] x = {x1,Math.abs((2*x1)-x2),x2};
-	        	int[] y = {y1,y2,y2};
-	        	addTriangle(x, y);
-	            break;
-	 
-	        case "bArc":
-	        	double startAngle = 0;
-	        	double endAngle = Math.PI;
-	        	updateCode("arc(" + (int)((x1+x2)/2) + ", " + (int)((y1+y2)/2) + ", " + Math.abs(x1-x2) + ", " + Math.abs(y1-y2) + ", " + (startAngle+Math.PI) + ", " + (endAngle+Math.PI) + ", PIE);");
-	        	addArc(smallX,smallY, Math.abs(x1-x2),Math.abs(y1-y2), (int)Math.toDegrees(startAngle), (int)Math.toDegrees(endAngle), Arc2D.PIE);
+	        case "confirmStroke":
+	        	int newSize = strokeSize.getValue();
+	        	
+	        	if (p.selectedShape != null) {
+	    	    	int position = p.findProcessingShapeLine(p.selectedShape)-1;
+	    	    	p.selectedShape.strokeSize = newSize;
+	    	    	p.insertProcessingLine(p.selectedShape.getProcessingStrokeSize(), position);
+	    	    	if (p.shapes.indexOf(p.selectedShape)+1 < p.shapes.size()) {
+	    	    		ShapeBuilder nextShape = p.shapes.get(p.shapes.indexOf(p.selectedShape)+1);
+	    		    	int nextPosition = p.findProcessingShapeLine(nextShape)-1;
+	    		    	p.insertProcessingLine(nextShape.getProcessingStrokeSize(), nextPosition);
+	    	    	}
+	        	}
+	    	    else {
+	    	    	if (p.shapes.size() != 0) {
+	    	    		p.shapes.get(p.shapes.size()-1).strokeSize = newSize;
+	    	    	}
+	    	    	p.defaultStrokeSize = newSize;
+	    	    	p.updateCode("strokeWeight(" + newSize + ");");
+	    	    }
+	        	
+	        	p.selectedShape = null;
+	        	p.repaint();
 	        	break;
-	 
-	        case "bQuad":
-	        	int[] xPos = {smallX,smallX+(int)(Math.abs(x1-x2)*0.75),bigX,smallX+(int)(Math.abs(x1-x2)*0.25)};
-	        	int[] yPos =  {smallY,smallY,bigY,bigY};
-	        	updateCode("quad(" + xPos[0] + ", " + yPos[0] + ", " + xPos[1] + ", " + yPos[1] + ", " + xPos[2] + ", " + yPos[2] + ", " + xPos[3] + ", " + yPos[3] + ");");
-	        	addQuad(xPos, yPos);
-	            break;
-	 
-	        case "bLine":
-	        	updateCode("line(" + x1 + ", " + y1 + ", " + x2 + ", " + y2 + ");");
-	        	addLine(x1, y1, x2, y2);
-	            break;
-	 
-	        case  "bPoint":
-	        	updateCode("point(" + (int)((x1+x2)/2) + ", " + (int)((y1+y2)/2) + ");");
-	        	addEllipse(smallX,smallY,1,1);
-	            break;
+	        case "bStrokeSize":
+	        	strokeSelector.show(f,200,100);
+	        	break;
+	        case "bDelete":
+	        	keyListeners.callDelete();
+	        	break;
+	        default:
+	        	if (p.currentEvent != e.getActionCommand()) {
+		        	if (buttons.keySet().contains(p.currentEvent)) {
+		        		buttons.get(p.currentEvent).setOpaque(false);
+		        		buttons.get(p.currentEvent).setBackground(Color.LIGHT_GRAY);
+	        		}	
+	        		p.cursor = new Cursor(Cursor.CROSSHAIR_CURSOR);
+	        		p.currentEvent = e.getActionCommand();
+	        		buttons.get(e.getActionCommand()).setBackground(Color.GRAY);
+	        	}
+	        	else {
+	        		p.cursor = new Cursor(Cursor.DEFAULT_CURSOR);
+	        		buttons.get(p.currentEvent).setOpaque(false);
+	        		buttons.get(p.currentEvent).setBackground(Color.LIGHT_GRAY);
+	        		p.currentEvent = "";
+	        	}
+	        	p.comboBox = null;
+	        	p.repaint();
 		}
-		currentEvent = "";
-    }
-    
-    @Override
-	public void mouseClicked(MouseEvent e) {
-    }
-	
-	@Override
-    public void mouseEntered(MouseEvent e) {
-    }
-	
-	@Override
-	public void mouseExited(MouseEvent e) {
-    }
-    
-    public void updateCode(String newText) {
-		base.getActiveEditor().setText(base.getActiveEditor().getText() + "\n" + newText);
 	}
+	
+	
 }
+
+
 
