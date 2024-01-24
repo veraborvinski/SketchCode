@@ -2,13 +2,13 @@
 # UTF-8 supported.
 
 # The name of your tool as you want it formatted.
-name = SkwtchToCode
+name = SketchCode
 
 # List of authors. Links can be provided using the syntax [author name](url).
 authors = [Vera Borvinski](https://github.com/veraborvinski)
 
 # A web page for your tool, NOT a direct link to where to download it.
-url = https://github.com/veraborvinski/SketchToCode
+url = https://github.com/veraborvinski/SketchCode
 
 # The category (or categories) of your tool, must be from the following list:
 #   "3D"            "Animation"     "Compilations"      "Data"          
