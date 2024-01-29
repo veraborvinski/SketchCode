@@ -60,6 +60,14 @@ public class ShapeBuilder {
 		return "strokeWeight(" + strokeSize + ");";
 	}
 	
+	public String getProcessingRotate() {
+		return  "rotate(" + Math.toRadians(rotation) + ");";
+	}
+	
+	public String getReverseProcessingRotate() {
+		return  "rotate(-" + Math.toRadians(rotation) + ");";
+	}
+	
 	public void createShapeFromCode(String s) {
 		String[] values = s.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",");
 		switch (shapeType) {
