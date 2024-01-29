@@ -30,9 +30,9 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 	Point firstPoint = new Point(0,0);
 	Base base;
 	
-	ShapeBuilder selectedShape;
+	ShapeBuilder currentShape;
 	ArrayList<ShapeBuilder> copiedShapes = new ArrayList<ShapeBuilder>();
-	ComboBox comboBox;
+	ComboBox comboBox = null;
 	ArrayList<ShapeBuilder> selectedShapes = new ArrayList<ShapeBuilder>();
 	
 	Color fill;
@@ -126,28 +126,61 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
     		if (currentEvent == "bText") {
             	int[] coords = {firstPoint.x, firstPoint.y};
             	textBoxes.put("Hello World", coords);
-            	updateCode("text(Hello World, " + firstPoint.x + ", " + firstPoint.y +");");
+            	updateDraw("text(Hello World, " + firstPoint.x + ", " + firstPoint.y +");");
     		}
     		if (currentEvent != "" && currentEvent != "bText") {
-    			selectedShape = new ShapeBuilder(currentEvent, firstPoint, firstPoint);
-    			selectedShape.fill = defaultColour;
-    			selectedShape.stroke = defaultStrokeColour;
-    			selectedShape.strokeSize = defaultStrokeSize;
-    			updateCode(selectedShape.processingShape);
-    			shapes.add(selectedShape);
-    			comboBox = new ComboBox(selectedShape.javaShape.getBounds());
+    			currentShape = new ShapeBuilder(currentEvent, firstPoint, firstPoint);
+    			currentShape.fill = defaultColour;
+    			currentShape.stroke = defaultStrokeColour;
+    			currentShape.strokeSize = defaultStrokeSize;
+    			shapes.add(currentShape);
+    			comboBox = new ComboBox(currentShape.javaShape.getBounds());
     			findSelectedShapes();
     		}
+    		if (comboBox == null && currentEvent=="") {
+				for (ShapeBuilder shape: shapes) {
+					if (shape.javaShape.contains(e.getPoint())) {
+		                comboBox = new ComboBox(shape.javaShape.getBounds());
+		                findSelectedShapes();
+		                repaint();
+		        	}
+		        }
+			} 
     	}
     }
     
     public void mouseReleased(MouseEvent e) {
+    	Point secondPoint = e.getPoint();
+    	
     	if (e.isPopupTrigger()) {
     		callMenu(e);
     	} else {
     		if (currentEvent != "" && currentEvent != "bText") {
-    			selectedShape = null;
-    		}
+    			updateDraw(currentShape.processingShape);
+    			currentShape = null;
+    		} 
+    		if (comboBox == null) {
+	    		comboBox = new ComboBox(new Rectangle(Math.min(firstPoint.x,secondPoint.x),Math.min(firstPoint.y,secondPoint.y),Math.abs(firstPoint.x-secondPoint.x),Math.abs(firstPoint.y-secondPoint.y)));
+				findSelectedShapes();
+				if (selectedShapes.size()==0) {
+					comboBox=null;
+				}
+    		} else {
+				if (comboBox.rotationPoint.contains(firstPoint)) {
+					int firstLine = findProcessingShapeLine(selectedShapes.get(0));
+					int secondLine = findProcessingShapeLine(selectedShapes.get(selectedShapes.size()-1));
+					if (findProcessingLine(firstLine-1).contains("rotate(") && !findProcessingLine(firstLine-1).contains("rotate(-")) {
+    		    		replaceProcessingLine("\t"+selectedShapes.get(0).getProcessingRotate(), firstLine-1);
+			    	} else {
+			    		insertProcessingLine("\t"+selectedShapes.get(0).getProcessingRotate(), firstLine-1);
+			    	}
+					if (findProcessingLine(secondLine+1).contains("rotate(-")) {
+    		    		replaceProcessingLine("\t"+selectedShapes.get(selectedShapes.size()-1).getReverseProcessingRotate(), secondLine+1);
+			    	} else {
+			    		insertProcessingLine("\t"+selectedShapes.get(selectedShapes.size()-1).getReverseProcessingRotate(), secondLine+1);
+			    	}
+				}
+			}
     	}
     }
     
@@ -155,7 +188,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
     	for (ShapeBuilder shape: shapesToMove) {
 			int lineToUpdate = findProcessingShapeLine(shape);
 			shape.moveShape(secondPoint);
-			replaceProcessingLine(shape.processingShape, lineToUpdate);
+			replaceProcessingLine("\t"+shape.processingShape, lineToUpdate);
 		}
     	boxToMove.moveComboBox(secondPoint);
     }
@@ -211,23 +244,34 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
     	base.getActiveEditor().setText(editorLines.get(0));
     	for (int i = 1; i < editorLines.size(); i++) {
     		if (editorLines.get(i).contains("background(")) {
-    			updateCode("background(" + c.getRed() + ", " + c.getGreen() + ", " + c.getBlue() + ");");
+    			updateDraw("background(" + c.getRed() + ", " + c.getGreen() + ", " + c.getBlue() + ");");
     		}
     		else {
-    			updateCode(editorLines.get(i));	
+    			updateDraw(editorLines.get(i));	
     		}
     	}
     }
     
     public void changeFill(Color c) {
-	    if (selectedShape != null) {
-	    	int position = findProcessingShapeLine(selectedShape)-1;
-	    	selectedShape.fill = c;
-	    	insertProcessingLine(selectedShape.getProcessingFill(), position);
-	    	if (shapes.indexOf(selectedShape)+1 < shapes.size()) {
-		    	ShapeBuilder nextShape = shapes.get(shapes.indexOf(selectedShape)+1);
-		    	int nextPosition = findProcessingShapeLine(nextShape)-1;
-		    	insertProcessingLine(nextShape.getProcessingFill(), nextPosition);
+	    if (selectedShapes.size() != 0) {
+	    	for (ShapeBuilder selectedShape: selectedShapes) {
+		    	int position = findProcessingShapeLine(selectedShape)-1;
+		    	selectedShape.fill = c;
+		    	if (findProcessingLine(position).contains("fill(")) {
+		    		replaceProcessingLine("\t"+selectedShape.getProcessingFill(), position);
+		    	} else {
+		    		insertProcessingLine("\t"+selectedShape.getProcessingFill(), position);
+		    	}
+		    	
+		    	if (shapes.indexOf(selectedShape)+1 < shapes.size()) {
+			    	ShapeBuilder nextShape = shapes.get(shapes.indexOf(selectedShape)+1);
+			    	int nextPosition = findProcessingShapeLine(nextShape)-1;
+			    	if (findProcessingLine(position).contains("fill(")) {
+			    		replaceProcessingLine("\t"+nextShape.getProcessingFill(), nextPosition);
+			    	} else {
+			    		insertProcessingLine("\t"+nextShape.getProcessingFill(), nextPosition);
+			    	}
+		    	}
 	    	}
     	}
 	    else {
@@ -235,7 +279,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 	    		shapes.get(shapes.size()-1).fill = c;
 	    	}
 	    	defaultColour = c;
-	    	updateCode("fill(" + c.getRed() + ", " + c.getGreen() + ", " + c.getBlue() + ");");
+	    	updateDraw("\tfill(" + c.getRed() + ", " + c.getGreen() + ", " + c.getBlue() + ");");
 	    }
 	    
     }
@@ -261,62 +305,43 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 	    
 		if (currentEvent != "" && currentEvent != "bText") {
 			if ((angle > 0 && angle < 22.5) || (angle<360 && angle>337.5)) {
-				selectedShape.stretchShape(secondPoint, Cursor.N_RESIZE_CURSOR);
+				currentShape.stretchShape(secondPoint, Cursor.N_RESIZE_CURSOR);
 			} else if (angle > 22.5 && angle < 67.5) {
-				selectedShape.stretchShape(secondPoint, Cursor.NE_RESIZE_CURSOR);
+				currentShape.stretchShape(secondPoint, Cursor.NE_RESIZE_CURSOR);
 			} else if (angle > 67.5 && angle < 112.5) {
-				selectedShape.stretchShape(secondPoint, Cursor.E_RESIZE_CURSOR);
+				currentShape.stretchShape(secondPoint, Cursor.E_RESIZE_CURSOR);
 			} else if (angle > 112.5 && angle < 157.5) {
-				selectedShape.stretchShape(secondPoint, Cursor.SE_RESIZE_CURSOR);
+				currentShape.stretchShape(secondPoint, Cursor.SE_RESIZE_CURSOR);
 			} else if (angle > 157.5 && angle < 202.5) {
-				selectedShape.stretchShape(secondPoint, Cursor.S_RESIZE_CURSOR);
+				currentShape.stretchShape(secondPoint, Cursor.S_RESIZE_CURSOR);
 			} else if (angle > 202.5 && angle < 247.5) {
-				selectedShape.stretchShape(secondPoint, Cursor.SW_RESIZE_CURSOR);
+				currentShape.stretchShape(secondPoint, Cursor.SW_RESIZE_CURSOR);
 			} else if (angle > 247.5 && angle < 292.5) {
-				selectedShape.stretchShape(secondPoint, Cursor.W_RESIZE_CURSOR);
+				currentShape.stretchShape(secondPoint, Cursor.W_RESIZE_CURSOR);
 			} else if (angle > 292.5 && angle < 337.5) {
-				selectedShape.stretchShape(secondPoint, Cursor.NW_RESIZE_CURSOR);
+				currentShape.stretchShape(secondPoint, Cursor.NW_RESIZE_CURSOR);
 			}
-			comboBox = new ComboBox(selectedShape.javaShape.getBounds());
+			comboBox = new ComboBox(currentShape.javaShape.getBounds());
 			findSelectedShapes();
 		}
 		
 		if(currentEvent == "") {
-			if (comboBox == null) {
-				for (ShapeBuilder shape: shapes) {
-					if (shape.javaShape.contains(e.getPoint())) {
-		                selectedShapes.add(shape);
-		                comboBox = new ComboBox(shape.javaShape.getBounds());
-		                repaint();
-		        	}
-		        }
-			} 
-			
 			if (comboBox != null) {
 				if (comboBox.rotationPoint.contains(firstPoint)) {
 					for (ShapeBuilder shape: selectedShapes) {
-						int selectedLine = findProcessingShapeLine(shape);
 						shape.rotation = (int)angle;
-						String rotateProcessing = "rotateZ(" + Math.toRadians(shape.rotation) + ");";
-						insertProcessingLine(rotateProcessing, selectedLine-1);
 					}
-				} else if (cursorDirection == 0) {
+				} else if (cursorDirection == 0 && comboBox.comboBox.contains(firstPoint)) {
 				 	moveShape(secondPoint,selectedShapes,comboBox);
-				} else {
+				} else if (comboBox.comboBox.contains(firstPoint)){
 					comboBox.stretchComboBox(secondPoint,cursorDirection);
 					for (ShapeBuilder shape: selectedShapes) {
 						int lineToUpdate = findProcessingShapeLine(shape);
 						shape.stretchShape(secondPoint,cursorDirection);
-						replaceProcessingLine(shape.processingShape, lineToUpdate);
+						replaceProcessingLine("\t"+shape.processingShape, lineToUpdate);
 					}
-				}
-			} else {
-				comboBox = new ComboBox(new Rectangle(Math.min(firstPoint.x,secondPoint.x),Math.min(firstPoint.y,secondPoint.y),Math.abs(firstPoint.x-secondPoint.x),Math.abs(firstPoint.y-secondPoint.y)));
-				findSelectedShapes();
-				if (selectedShapes.size()==0) {
-					comboBox=null;
-				}
-			}
+				} 
+			} 
 		}
 		
 		repaint();
@@ -374,9 +399,19 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 		base.getActiveEditor().setText(base.getActiveEditor().getText() + "\n" + newText);
 	}
     
+    public void updateDraw(String newText) {
+    	ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
+    	insertProcessingLine("\t"+newText, editorLines.size()-2);
+	}
+    
     public int findProcessingShapeLine(ShapeBuilder s) {
     	ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
-    	return editorLines.indexOf(s.processingShape);
+    	return editorLines.indexOf("\t"+s.processingShape);
+	}
+    
+    public String findProcessingLine(int n) {
+    	ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
+    	return editorLines.get(n);
 	}
 	
 	public void insertProcessingLine(String newLine, int position) {
@@ -419,6 +454,18 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 	}
 	
 	public void removeProcessingLine(String lineToRemove) {
+		ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
+		
+		editorLines.remove(lineToRemove);
+		
+		base.getActiveEditor().setText(editorLines.get(0));
+
+		for (int i = 1; i < editorLines.size(); i++) {
+			updateCode(editorLines.get(i));
+		}
+	}
+	
+	public void removeProcessingLineByNumber(int lineToRemove) {
 		ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
 		
 		editorLines.remove(lineToRemove);

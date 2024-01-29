@@ -50,11 +50,11 @@ public class PanelMenu implements ActionListener{
 					ShapeBuilder shapeToPaste = new ShapeBuilder(copiedShape.shapeType, copiedShape.firstPoint, copiedShape.secondPoint);;
 					shapeToPaste.moveShape(new Point(currentX,currentY));
 					p.shapes.add(shapeToPaste);
-					p.updateCode(shapeToPaste.processingShape);
+					p.updateDraw(shapeToPaste.processingShape);
 				}
 				break;
 			case "Change background":
-				System.out.print("Cut");
+				System.out.print("Change bg");
 				break;
 			case "Rezise canvas":
 				setSize.show(p, currentX , currentY);

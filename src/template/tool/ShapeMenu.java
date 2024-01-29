@@ -72,7 +72,7 @@ public class ShapeMenu implements ActionListener{
 					ShapeBuilder shapeToPaste = new ShapeBuilder(copiedShape.shapeType, copiedShape.firstPoint, copiedShape.secondPoint);;
 					shapeToPaste.moveShape(new Point(currentX,currentY));
 					p.shapes.add(shapeToPaste);
-					p.updateCode(shapeToPaste.processingShape);
+					p.updateDraw(shapeToPaste.processingShape);
 				}
 				break;
 			case "Cut":
@@ -80,7 +80,7 @@ public class ShapeMenu implements ActionListener{
 				p.copiedShapes.addAll(currentShapes);
 				for (ShapeBuilder currentShape: currentShapes) {
 					p.shapes.remove(currentShape);
-					p.removeProcessingLine(currentShape.processingShape);
+					p.removeProcessingLine("\t"+currentShape.processingShape);
 				}
 				break;
 			case "Bring to front":

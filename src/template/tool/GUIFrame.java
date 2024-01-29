@@ -114,23 +114,58 @@ public class GUIFrame extends JFrame implements ActionListener{
 	public void initEditor() {
 
 		ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
+		Boolean isBackgroundSet = false;
+		Boolean isFillSet = false;
+		Boolean isStrokeSet = false;
+		Boolean isSetupSet = false;
+		Boolean isDrawSet = false;
 		
 		if (editorLines.size() == 0) {
-	    	p.insertProcessingLine("background(" + backgroundColor + ");", 0);
-	    	p.insertProcessingLine("fill(250,250,250);", 1);
-	    	p.insertProcessingLine("stroke(" + strokeColor + ");", 2);
+	    	p.insertProcessingLine("\tbackground(" + backgroundColor + ");", 0);
+	    	p.insertProcessingLine("\tfill(250,250,250);", 1);
+	    	p.insertProcessingLine("\tstroke(" + strokeColor + ");", 2);
 	    }
 	    else if (editorLines.size() > 0) {
-		    if (!editorLines.contains("background(" + backgroundColor + ");")) {
-		    	p.insertProcessingLine("background(" + backgroundColor + ");", 1);
+	    	for (String line: editorLines) {
+			    if (line.contains("background(")) {
+			    	isBackgroundSet = true;
+			    }
+			    
+			    if (line.contains("fill(")) {
+			    	isFillSet = true;
+			    }
+			    
+			    if (line.contains("stroke(")) {
+			    	isStrokeSet = true;
+			    }
+			    
+			    if (line.contains("void setup() {")) {
+			    	isSetupSet = true;
+			    }
+			    
+			    if (line.contains("void draw() {")) {
+			    	isDrawSet = true;
+			    }
+	    	}
+	    	if (!isBackgroundSet) {
+		    	p.insertProcessingLine("\tbackground(" + backgroundColor + ");", 1);
 		    }
 		    
-		    if (!editorLines.contains("fill(250,250,250);")) {
-		    	p.insertProcessingLine("fill(250,250,250);", 2);
+		    if (!isFillSet) {
+		    	p.insertProcessingLine("\tfill(250,250,250);", 2);
 		    }
 		    
-		    if (!editorLines.contains("stroke(" + strokeColor + ");")) {
-		    	p.insertProcessingLine("stroke(" + strokeColor + ");", 3);
+		    if (!isStrokeSet) {
+		    	p.insertProcessingLine("\tstroke(" + strokeColor + ");", 3);
+		    }
+		    
+		    if (!isSetupSet) {
+		    	p.insertProcessingLine("}", 4);
+		    }
+		    
+		    if (!isDrawSet) {
+		    	p.insertProcessingLine("void draw() {", 5);
+		    	p.updateCode("}");
 		    }
 	    }
 	    
@@ -139,7 +174,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 	
 	public void updateSize(int width, int height) {
 		ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
-    	base.getActiveEditor().setText("size(" + width + ", " + height + ");");
+    	base.getActiveEditor().setText("void setup() {\n\tsize(" + width + ", " + height + ");");
         for (int i = 1; i < editorLines.size(); i++) {
     		p.updateCode(editorLines.get(i));
     	}
@@ -239,7 +274,6 @@ public class GUIFrame extends JFrame implements ActionListener{
 	        	if (p.selectedShapes.size() != 0) {
 		        	p.changeFill(p.fill);
 		        	p.repaint();
-			        p.selectedShape = null;
 			        p.fill = null;
 	        	}
 	        	break;
@@ -249,22 +283,29 @@ public class GUIFrame extends JFrame implements ActionListener{
 		        	int[] newColor = {color.getRed(),color.getGreen(),color.getBlue()};	        	
 			        p.changeFill(color);        	
 			        p.repaint();
-			        p.selectedShape = null;
 	        	}
 	        	break;
 	        case "bStrokeColour":
 	        	Color strokeColor = JColorChooser.showDialog(this,"Select a color", Color.WHITE);
 	        	if (strokeColor != null) {
-		        	        	
 		    	    if (p.selectedShapes.size() != 0) {
-		    	    	int position = p.findProcessingShapeLine(p.selectedShape)-1;
-		    	    	p.selectedShape.stroke = strokeColor;
-		    	    	p.insertProcessingLine(p.selectedShape.getProcessingStroke(), position);
-		    	    	
-		    	    	if (p.shapes.indexOf(p.selectedShape)+1 < p.shapes.size()) {
-		    	    		ShapeBuilder nextShape = p.shapes.get(p.shapes.indexOf(p.selectedShape)+1);
-		    		    	int nextPosition = p.findProcessingShapeLine(nextShape)-1;
-		    		    	p.insertProcessingLine(nextShape.getProcessingStroke(), nextPosition);	    	    		
+		    	    	for (ShapeBuilder selectedShape: p.selectedShapes) {
+			    	    	int position = p.findProcessingShapeLine(selectedShape)-1;
+			    	    	selectedShape.stroke = strokeColor;
+			    	    	if (p.findProcessingLine(position).contains("stroke(")) {
+			    	    		p.replaceProcessingLine("\t"+selectedShape.getProcessingStroke(), position);
+					    	} else {
+					    		p.insertProcessingLine("\t"+selectedShape.getProcessingStroke(), position);
+					    	}
+			    	    	if (p.shapes.indexOf(selectedShape)+1 < p.shapes.size()) {
+			    	    		ShapeBuilder nextShape = p.shapes.get(p.shapes.indexOf(selectedShape)+1);
+			    		    	int nextPosition = p.findProcessingShapeLine(nextShape)-1;
+			    		    	if (p.findProcessingLine(position).contains("stroke(")) {
+			    		    		p.replaceProcessingLine("\t"+nextShape.getProcessingStroke(), nextPosition);
+						    	} else {
+						    		p.insertProcessingLine("\t"+nextShape.getProcessingStroke(), nextPosition);
+						    	}	    	    		
+			    	    	}
 		    	    	}
 		        	}
 		    	    else {
@@ -272,34 +313,39 @@ public class GUIFrame extends JFrame implements ActionListener{
 		    	    		p.shapes.get(p.shapes.size()-1).stroke = strokeColor;
 		    	    	}
 	    	    		p.defaultStrokeColour = strokeColor;
-		    	    	p.updateCode("stroke(" + strokeColor.getRed() + ", " + strokeColor.getGreen() + ", " + strokeColor.getBlue() + ");");
+		    	    	p.updateCode("\t"+"stroke(" + strokeColor.getRed() + ", " + strokeColor.getGreen() + ", " + strokeColor.getBlue() + ");");
 		    	    }
-		        	p.selectedShape = null;
 		        	p.repaint();
 	        	}
 	        	break;
 	        case "confirmStroke":
 	        	int newSize = strokeSize.getValue();
-	        	
-	        	if (p.selectedShape != null) {
-	    	    	int position = p.findProcessingShapeLine(p.selectedShape)-1;
-	    	    	p.selectedShape.strokeSize = newSize;
-	    	    	p.insertProcessingLine(p.selectedShape.getProcessingStrokeSize(), position);
-	    	    	if (p.shapes.indexOf(p.selectedShape)+1 < p.shapes.size()) {
-	    	    		ShapeBuilder nextShape = p.shapes.get(p.shapes.indexOf(p.selectedShape)+1);
-	    		    	int nextPosition = p.findProcessingShapeLine(nextShape)-1;
-	    		    	p.insertProcessingLine(nextShape.getProcessingStrokeSize(), nextPosition);
-	    	    	}
-	        	}
-	    	    else {
+	        	if (p.selectedShapes.size() != 0) {
+	     	    	for (ShapeBuilder selectedShape: p.selectedShapes) {
+	     	    		int position = p.findProcessingShapeLine(selectedShape)-1;
+		    	    	selectedShape.strokeSize = newSize;
+		    	    	if (p.findProcessingLine(position).contains("strokeWeight(")) {
+		    	    		p.replaceProcessingLine("\t"+selectedShape.getProcessingStrokeSize(), position);
+				    	} else {
+				    		p.insertProcessingLine("\t"+selectedShape.getProcessingStrokeSize(), position);
+				    	}
+		    	    	if (p.shapes.indexOf(selectedShape)+1 < p.shapes.size()) {
+		    	    		ShapeBuilder nextShape = p.shapes.get(p.shapes.indexOf(selectedShape)+1);
+		    		    	int nextPosition = p.findProcessingShapeLine(nextShape)-1;
+		    		    	if (p.findProcessingLine(position).contains("strokeWeight(")) {
+		    		    		p.replaceProcessingLine("\t"+nextShape.getProcessingStrokeSize(), nextPosition);
+					    	} else {
+					    		p.insertProcessingLine("\t"+nextShape.getProcessingStrokeSize(), nextPosition);
+					    	}
+		    	    	}
+	     	    	}
+	         	} else {
 	    	    	if (p.shapes.size() != 0) {
 	    	    		p.shapes.get(p.shapes.size()-1).strokeSize = newSize;
 	    	    	}
 	    	    	p.defaultStrokeSize = newSize;
-	    	    	p.updateCode("strokeWeight(" + newSize + ");");
+	    	    	p.updateCode("\t"+"strokeWeight(" + newSize + ");");
 	    	    }
-	        	
-	        	p.selectedShape = null;
 	        	p.repaint();
 	        	break;
 	        case "bStrokeSize":
