@@ -174,6 +174,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 			    	} else {
 			    		insertProcessingLine("\t"+selectedShapes.get(0).getProcessingRotate(), firstLine-1);
 			    	}
+					
 					if (findProcessingLine(secondLine+1).contains("rotate(-")) {
     		    		replaceProcessingLine("\t"+selectedShapes.get(selectedShapes.size()-1).getReverseProcessingRotate(), secondLine+1);
 			    	} else {
@@ -266,7 +267,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 		    	if (shapes.indexOf(selectedShape)+1 < shapes.size()) {
 			    	ShapeBuilder nextShape = shapes.get(shapes.indexOf(selectedShape)+1);
 			    	int nextPosition = findProcessingShapeLine(nextShape)-1;
-			    	if (findProcessingLine(position).contains("fill(")) {
+			    	if (findProcessingLine(nextPosition).contains("fill(")) {
 			    		replaceProcessingLine("\t"+nextShape.getProcessingFill(), nextPosition);
 			    	} else {
 			    		insertProcessingLine("\t"+nextShape.getProcessingFill(), nextPosition);
@@ -333,7 +334,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 					}
 				} else if (cursorDirection == 0 && comboBox.comboBox.contains(firstPoint)) {
 				 	moveShape(secondPoint,selectedShapes,comboBox);
-				} else if (comboBox.comboBox.contains(firstPoint)){
+				} else if (comboBox.comboBox.contains(firstPoint) && cursorDirection != 0){
 					comboBox.stretchComboBox(secondPoint,cursorDirection);
 					for (ShapeBuilder shape: selectedShapes) {
 						int lineToUpdate = findProcessingShapeLine(shape);

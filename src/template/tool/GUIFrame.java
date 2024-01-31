@@ -300,7 +300,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 			    	    	if (p.shapes.indexOf(selectedShape)+1 < p.shapes.size()) {
 			    	    		ShapeBuilder nextShape = p.shapes.get(p.shapes.indexOf(selectedShape)+1);
 			    		    	int nextPosition = p.findProcessingShapeLine(nextShape)-1;
-			    		    	if (p.findProcessingLine(position).contains("stroke(")) {
+			    		    	if (p.findProcessingLine(nextPosition).contains("stroke(")) {
 			    		    		p.replaceProcessingLine("\t"+nextShape.getProcessingStroke(), nextPosition);
 						    	} else {
 						    		p.insertProcessingLine("\t"+nextShape.getProcessingStroke(), nextPosition);
@@ -332,7 +332,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 		    	    	if (p.shapes.indexOf(selectedShape)+1 < p.shapes.size()) {
 		    	    		ShapeBuilder nextShape = p.shapes.get(p.shapes.indexOf(selectedShape)+1);
 		    		    	int nextPosition = p.findProcessingShapeLine(nextShape)-1;
-		    		    	if (p.findProcessingLine(position).contains("strokeWeight(")) {
+		    		    	if (p.findProcessingLine(nextPosition).contains("strokeWeight(")) {
 		    		    		p.replaceProcessingLine("\t"+nextShape.getProcessingStrokeSize(), nextPosition);
 					    	} else {
 					    		p.insertProcessingLine("\t"+nextShape.getProcessingStrokeSize(), nextPosition);
