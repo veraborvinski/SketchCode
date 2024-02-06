@@ -22,7 +22,8 @@ import processing.app.Base;
 class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 	
 	public ArrayList<ShapeBuilder> shapes = new ArrayList<ShapeBuilder>();
-	public ArrayList<ShapeBuilder> shapeHistory = new ArrayList<ShapeBuilder>();
+	public ArrayList<ArrayList<String>> undoStack = new ArrayList<ArrayList<String>>();
+	public ArrayList<ArrayList<String>> redoStack = new ArrayList<ArrayList<String>>();
 	
 	Map<String, int[]> textBoxes = new HashMap<String, int[]>();
 	
@@ -75,7 +76,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
         	if (selectedShapes.size() == 1) {
         		g2.rotate(Math.toRadians(selectedShapes.get(0).rotation), comboBox.comboBox.x + comboBox.comboBox.width/2, comboBox.comboBox.y + comboBox.comboBox.height/2);
         	}
-        	//draw comboobox
+        	//draw combobox
     		g2.setColor(Color.BLACK);
     		g2.setStroke(new BasicStroke(1,BasicStroke.CAP_BUTT,BasicStroke.JOIN_BEVEL,0,new float[] {1,2},0));		
     		g2.draw(comboBox.comboBox);
@@ -93,6 +94,10 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
         	g2.drawString(entry.getKey(), entry.getValue()[0], entry.getValue()[1]);
         }
         g2.dispose();
+        
+        if (!undoStack.contains(Arrays.asList(base.getActiveEditor().getText().split("\n")))) {
+        	undoStack.add(new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n"))));
+        }
     } 
     
     public void callMenu(MouseEvent e) {
@@ -126,7 +131,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
     		if (currentEvent == "bText") {
             	int[] coords = {firstPoint.x, firstPoint.y};
             	textBoxes.put("Hello World", coords);
-            	updateDraw("text(Hello World, " + firstPoint.x + ", " + firstPoint.y +");");
+            	updateDraw("text(\"Hello World\", " + firstPoint.x + ", " + firstPoint.y +");");
     		}
     		if (currentEvent != "" && currentEvent != "bText") {
     			currentShape = new ShapeBuilder(currentEvent, firstPoint, firstPoint);

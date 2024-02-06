@@ -12,12 +12,15 @@ public class ShapeMenu implements ActionListener{
 	final JPopupMenu shapeMenu = new JPopupMenu("ShapeMenu");
 	JPopupMenu setLocation = new JPopupMenu("SetLocation");
 	JPopupMenu setSize = new JPopupMenu("SetSize");
+	JPopupMenu setComment = new JPopupMenu("SetComment");
 	JTextField xCoords = new JTextField( 4 );
 	JTextField yCoords = new JTextField( 4 );
 	JTextField height = new JTextField( 4 );
 	JTextField width = new JTextField( 4 );
+	JTextField comment = new JTextField( 35 );
 	JButton confirmLocation = new JButton();
 	JButton confirmSize = new JButton();
+	JButton confirmComment = new JButton();
 	Component currentComponent;
 	int currentX;
 	int currentY;
@@ -34,6 +37,7 @@ public class ShapeMenu implements ActionListener{
 		shapeMenu.add("Resize").addActionListener( this );
 		shapeMenu.add("Bring to front").addActionListener( this );
 		shapeMenu.add("Send to back").addActionListener( this );
+		shapeMenu.add("Comment").addActionListener( this );
 		
 		setLocation.add(xCoords);
 		setLocation.add(yCoords);
@@ -50,6 +54,13 @@ public class ShapeMenu implements ActionListener{
 		confirmSize.setActionCommand("confirmSize");
 		confirmSize.addActionListener(this);
         setSize.add(confirmSize);
+        
+        setComment.add(comment);
+		JLabel label3 = new JLabel("OK");
+		confirmComment.add(label3);
+		confirmComment.setActionCommand("confirmComment");
+		confirmComment.addActionListener(this);
+        setComment.add(confirmComment);
 	}
 	
 	public void showShapeMenu(Component c, int x, int y, ArrayList<ShapeBuilder> shapes) {
@@ -66,6 +77,7 @@ public class ShapeMenu implements ActionListener{
 			case "Copy":
 				p.copiedShapes.clear();
 				p.copiedShapes.addAll(currentShapes);
+				p.repaint();
 				break;
 			case "Paste":
 				for (ShapeBuilder copiedShape: p.copiedShapes) {
@@ -74,6 +86,7 @@ public class ShapeMenu implements ActionListener{
 					p.shapes.add(shapeToPaste);
 					p.updateDraw(shapeToPaste.processingShape);
 				}
+				p.repaint();
 				break;
 			case "Cut":
 				p.copiedShapes.clear();
@@ -82,14 +95,17 @@ public class ShapeMenu implements ActionListener{
 					p.shapes.remove(currentShape);
 					p.removeProcessingLine("\t"+currentShape.processingShape);
 				}
+				p.selectedShapes.clear();
+    			p.comboBox = null;
+				p.repaint();
 				break;
-			case "Bring to front":
+			case "Send to back":
 				for (ShapeBuilder currentShape: currentShapes) {
 					p.shapes.remove(currentShape);
 					p.shapes.add(0, currentShape);
 				}
 				break;
-			case "Send to back":
+			case "Bring to front":
 				for (ShapeBuilder currentShape: currentShapes) {
 					p.shapes.remove(currentShape);
 					p.shapes.add(currentShape);
@@ -110,6 +126,14 @@ public class ShapeMenu implements ActionListener{
 				break;
 			case "confirmSize":
 				System.out.print("Resize to " + width.getText() + ", " + height.getText());
+				break;
+			case "Comment":
+				setComment.show(p, currentX , currentY);
+				break;
+			case "confirmComment":
+				for (ShapeBuilder currentShape: currentShapes) {
+					p.insertProcessingLine("\t//" + comment.getText(), p.findProcessingShapeLine(currentShape)-1);
+				}
 				break;
 			default:
 				System.out.print("Default");

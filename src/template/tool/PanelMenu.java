@@ -52,6 +52,7 @@ public class PanelMenu implements ActionListener{
 					p.shapes.add(shapeToPaste);
 					p.updateDraw(shapeToPaste.processingShape);
 				}
+    			p.repaint();
 				break;
 			case "Change background":
 				System.out.print("Change bg");

@@ -205,8 +205,17 @@ public class GUIFrame extends JFrame implements ActionListener{
 	
 	public void updateDrawingFromCode(ArrayList<String> editorLines) {
 		ArrayList<String> codeList = new ArrayList<String>();
+		ArrayList<ShapeBuilder> shapesToRemove = new ArrayList<ShapeBuilder>();
 		for (ShapeBuilder shape: p.shapes) {
-			codeList.add(shape.processingShape);
+			if (editorLines.contains(shape.processingShape)) {
+				codeList.add(shape.processingShape);
+			} else {
+				shapesToRemove.add(shape);
+			}
+		}
+		
+		for (ShapeBuilder shape: shapesToRemove) {
+			p.shapes.remove(shape);
 		}
 
 		for (String line: editorLines) {
@@ -246,9 +255,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 				}
 				else if (line.contains("size(")) {
 					String[] size = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",2);
-					p.setMinimumSize(new Dimension(Integer.valueOf(size[0]),Integer.valueOf(size[1])));
-					f.setSize(new Dimension(Integer.valueOf(size[0])+20,Integer.valueOf(size[1])+20));
-					p.revalidate();
+					p.setSize(new Dimension(Integer.valueOf(size[0]),Integer.valueOf(size[1])));
 				}	
 			}
 		}
