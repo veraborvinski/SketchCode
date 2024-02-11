@@ -32,12 +32,12 @@ public class GUIFrame extends JFrame implements ActionListener{
 	Base base;
 	
 	//all button icons are souced from: https://www.svgrepo.com/
-	String[][] verticalButtons = {{"bRect", "Rectangle", "/data/rectangle-wide-svgrepo-com.png"}, //rectangle, square
-									{"bEllipse", "Ellipse", "/data/ellipse-figure-form-geometry-graphic-line-svgrepo-com.png"}, //ellipse or circle
-									{"bTriangle", "Triangle", "/data/shape-triangle-figure-form-geometry-graphic-svgrepo-com.png"}, //equilateral, isooceles, etc
-									{"bArc", "Arc", "/data/circle-three-quarters-svgrepo-com.png"}, //here we could do pi, half pi, etc
+	String[][] verticalButtons = {{"bRect", "Rectangle", "/data/rectangle-wide-svgrepo-com.png"},
+									{"bEllipse", "Ellipse", "/data/ellipse-figure-form-geometry-graphic-line-svgrepo-com.png"},
+									{"bTriangle", "Triangle", "/data/triangle-hand-drawn-shape-outline-svgrepo-com.png"},
+									{"bArc", "Arc", "/data/circle-three-quarters-svgrepo-com.png"},
 									{"bQuad", "Quad", "/data/parallelogram-figure-form-geometry-graphic-line-svgrepo-com.png"}, 
-									{"bLine", "Line", "/data/line-tool-svgrepo-com.png"}, //curved, with breakpoint(s)
+									{"bLine", "Line", "/data/line-tool-svgrepo-com.png"},
 									{"bPoint", "Point", "/data/dots-svgrepo-com.png"},
 									{"bText", "Text", "/data/text-svgrepo-com.png"}};
 	
@@ -49,16 +49,30 @@ public class GUIFrame extends JFrame implements ActionListener{
 									{"bRedo", "Redo", "/data/undo-right-svgrepo-com.png"},
 									{"bDelete", "Delete shape", "/data/delete-svgrepo-com.png"},
 									{"bUpdate", "Update drawing from code", "/data/update-svgrepo-com.png"},
-									{"bSelect", "Select shape", "/data/cursor-alt-svgrepo-com.png"}};
+									{"bSelect", "Select shape", "/data/cursor-alt-svgrepo-com.png"},
+									{"bArray", "Group shapes", "/data/value-pointer-svgrepo-com.png"}};
 	
 	Map<String, JButton> buttons = new HashMap<String, JButton>();
 	
 	Map<String, ButtonMenu> buttonMenus = new HashMap<String, ButtonMenu>();
-	String[] rectButtons = new String[] {"bRectangle","bSquare"};
-	String[] ellipseButtons = new String[] {"bEllipse","bCircle"};
-	String[] lineButtons = new String[] {"bLine", "bCurve", "bBezier"};
-	String[] arcButtons = new String[] {"bChord","bOpen","bPie"};
-	String[] triangleButtons = new String[] {"bEquilateral","bIsosceles", "bScalene"};
+	
+	String[][] rectButtons = {{"bRectangle", "Rectangle", "/data/rectangle-wide-svgrepo-com.png"},
+								{"bSquare", "Square", "/data/square-svgrepo-com.png"}};
+	
+	String[][] ellipseButtons = {{"bEllipse", "Ellipse", "/data/ellipse-figure-form-geometry-graphic-line-svgrepo-com.png"},
+								{"bCircle", "Circle", "data/circle-svgrepo-com.png"}};
+	
+	String[][] lineButtons = {{"bLine", "Line", "/data/line-tool-svgrepo-com.png"}, 
+								{"bCurve", "Curver line", "/data/vector-arc-svgrepo-com.png"}, 
+								{"bBezier", "Bezier curve", "/data/spline-svgrepo-com.png"}};
+	
+	String[][] arcButtons = {{"bChord", "CHord arc", "/data/chordarc.png"},
+							{"bOpen", "Open arc", "/data/openarc.png"},
+							{"bPie", "Pie arc", "/data/circle-three-quarters-svgrepo-com.png"}};
+	
+	String[][] triangleButtons = {{"bEquilateral", "Equilateral triangle", "/data/shape-triangle-figure-form-geometry-graphic-svgrepo-com.png"},
+									{"bIsosceles", "Isosceles triangle", "/data/triangle-svgrepo-com.png"}, 
+									{"bScalene", "Scalene triangle", "/data/triangle-hand-drawn-shape-outline-svgrepo-com.png"}};
 	
     Map<Integer,String> codeHistory = new HashMap<Integer,String>();
     
@@ -291,6 +305,9 @@ public class GUIFrame extends JFrame implements ActionListener{
 	        	break;
 	        case "bRedo":
 	        	keyListeners.callRedo();
+	        	break;
+	        case "bArray":
+	        	System.out.print("group shapes");
 	        	break;
 	        case "bFill":
 	        	p.fill = JColorChooser.showDialog(this,"Select a color", Color.WHITE);
