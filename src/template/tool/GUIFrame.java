@@ -32,12 +32,12 @@ public class GUIFrame extends JFrame implements ActionListener{
 	Base base;
 	
 	//all button icons are souced from: https://www.svgrepo.com/
-	String[][] verticalButtons = {{"bRect", "Rectangle", "/data/rectangle-wide-svgrepo-com.png"}, 
-									{"bEllipse", "Ellipse", "/data/ellipse-figure-form-geometry-graphic-line-svgrepo-com.png"}, 
-									{"bTriangle", "Triangle", "/data/shape-triangle-figure-form-geometry-graphic-svgrepo-com.png"},
-									{"bArc", "Arc", "/data/circle-three-quarters-svgrepo-com.png"},
-									{"bQuad", "Quad", "/data/parallelogram-figure-form-geometry-graphic-line-svgrepo-com.png"},
-									{"bLine", "Line", "/data/line-tool-svgrepo-com.png"},
+	String[][] verticalButtons = {{"bRect", "Rectangle", "/data/rectangle-wide-svgrepo-com.png"}, //rectangle, square
+									{"bEllipse", "Ellipse", "/data/ellipse-figure-form-geometry-graphic-line-svgrepo-com.png"}, //ellipse or circle
+									{"bTriangle", "Triangle", "/data/shape-triangle-figure-form-geometry-graphic-svgrepo-com.png"}, //equilateral, isooceles, etc
+									{"bArc", "Arc", "/data/circle-three-quarters-svgrepo-com.png"}, //here we could do pi, half pi, etc
+									{"bQuad", "Quad", "/data/parallelogram-figure-form-geometry-graphic-line-svgrepo-com.png"}, 
+									{"bLine", "Line", "/data/line-tool-svgrepo-com.png"}, //curved, with breakpoint(s)
 									{"bPoint", "Point", "/data/dots-svgrepo-com.png"},
 									{"bText", "Text", "/data/text-svgrepo-com.png"}};
 	
@@ -52,6 +52,13 @@ public class GUIFrame extends JFrame implements ActionListener{
 									{"bSelect", "Select shape", "/data/cursor-alt-svgrepo-com.png"}};
 	
 	Map<String, JButton> buttons = new HashMap<String, JButton>();
+	
+	Map<String, ButtonMenu> buttonMenus = new HashMap<String, ButtonMenu>();
+	String[] rectButtons = new String[] {"bRectangle","bSquare"};
+	String[] ellipseButtons = new String[] {"bEllipse","bCircle"};
+	String[] lineButtons = new String[] {"bLine", "bCurve", "bBezier"};
+	String[] arcButtons = new String[] {"bChord","bOpen","bPie"};
+	String[] triangleButtons = new String[] {"bEquilateral","bIsosceles", "bScalene"};
 	
     Map<Integer,String> codeHistory = new HashMap<Integer,String>();
     
@@ -70,6 +77,12 @@ public class GUIFrame extends JFrame implements ActionListener{
 	public void showGUI(Base base) { 
 		this.base = base;
 		p.base = base;
+		
+		buttonMenus.put("bRect", new ButtonMenu(p, rectButtons));
+		buttonMenus.put("bEllipse", new ButtonMenu(p, ellipseButtons));
+		buttonMenus.put("bArc", new ButtonMenu(p, arcButtons));
+		buttonMenus.put("bLine", new ButtonMenu(p, lineButtons));
+		buttonMenus.put("bTriangle", new ButtonMenu(p, triangleButtons));
 			
 		f.setLayout(new BorderLayout());
 		
@@ -105,7 +118,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 	    	    public void componentResized(ComponentEvent e){
 	    	    	updateSize(e.getComponent().getWidth(), e.getComponent().getHeight());
 	    		}
-	    });
+	    }); 
 	    
 	    f.pack();
 	    f.setVisible(true); 
@@ -198,6 +211,9 @@ public class GUIFrame extends JFrame implements ActionListener{
         	  tb.add(buttons.get(buttonNames[i][0]));
         	  tb.setBackground(Color.LIGHT_GRAY);
         	  tb.setOpaque(true);
+        	  if (buttonMenus.containsKey(buttonNames[i][0])) {
+        		  buttons.get(buttonNames[i][0]).setComponentPopupMenu(buttonMenus.get(buttonNames[i][0]).buttonMenu);
+        	  }
         }
         
         return tb;
@@ -262,7 +278,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 		p.repaint();
 		
 	}
-
+	
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		switch (e.getActionCommand()) { 
@@ -378,11 +394,9 @@ public class GUIFrame extends JFrame implements ActionListener{
 	        		p.currentEvent = "";
 	        	}
 	        	p.comboBox = null;
-	        	p.repaint();
+	        	p.repaint();	
 		}
-	}
-	
-	
+	}	
 }
 
 

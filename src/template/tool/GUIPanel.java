@@ -35,6 +35,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 	ArrayList<ShapeBuilder> copiedShapes = new ArrayList<ShapeBuilder>();
 	ComboBox comboBox = null;
 	ArrayList<ShapeBuilder> selectedShapes = new ArrayList<ShapeBuilder>();
+	ArrayList<ArrayList<ShapeBuilder>> shapesInArrays = new ArrayList<ArrayList<ShapeBuilder>>();
 	
 	Color fill;
 	Color defaultColour = Color.WHITE;
