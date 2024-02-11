@@ -13,6 +13,9 @@ public class ShapeMenu implements ActionListener{
 	JPopupMenu setLocation = new JPopupMenu("SetLocation");
 	JPopupMenu setSize = new JPopupMenu("SetSize");
 	JPopupMenu setComment = new JPopupMenu("SetComment");
+	JPopupMenu setArc = new JPopupMenu("SetArc");
+	JTextField startAngle = new JTextField( 3 );
+	JTextField endAngle = new JTextField( 3 );
 	JTextField xCoords = new JTextField( 4 );
 	JTextField yCoords = new JTextField( 4 );
 	JTextField height = new JTextField( 4 );
@@ -21,6 +24,7 @@ public class ShapeMenu implements ActionListener{
 	JButton confirmLocation = new JButton();
 	JButton confirmSize = new JButton();
 	JButton confirmComment = new JButton();
+	JButton confirmArc = new JButton();
 	Component currentComponent;
 	int currentX;
 	int currentY;
@@ -38,6 +42,7 @@ public class ShapeMenu implements ActionListener{
 		shapeMenu.add("Bring to front").addActionListener( this );
 		shapeMenu.add("Send to back").addActionListener( this );
 		shapeMenu.add("Comment").addActionListener( this );
+		shapeMenu.add("Group").addActionListener( this );
 		
 		setLocation.add(xCoords);
 		setLocation.add(yCoords);
@@ -69,11 +74,29 @@ public class ShapeMenu implements ActionListener{
 		currentX = x;
 		currentY = y;
 		currentShapes = shapes;
+		if (shapes.size() == 1 && shapes.get(0).processingShape.contains("arc(")) {
+			shapeMenu.add("Redraw arc").addActionListener( this );
+			setArc.add(startAngle);
+			setArc.add(endAngle);
+			JLabel label4 = new JLabel("OK");
+			confirmArc.add(label4);
+			confirmArc.setActionCommand("confirmArc");
+			confirmArc.addActionListener(this);
+			setArc.add(confirmArc);
+		}
     }
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		switch (e.getActionCommand()) { 
+			case "Redraw arc":
+				setArc.show(p, currentX, currentY);
+				break;
+			case "confirmArc":
+				if (startAngle.getText() != "" && endAngle.getText() != "") {
+					System.out.print(startAngle.getText() + endAngle.getText() );
+				}
+				break;
 			case "Copy":
 				p.copiedShapes.clear();
 				p.copiedShapes.addAll(currentShapes);
@@ -134,6 +157,9 @@ public class ShapeMenu implements ActionListener{
 				for (ShapeBuilder currentShape: currentShapes) {
 					p.insertProcessingLine("\t//" + comment.getText(), p.findProcessingShapeLine(currentShape)-1);
 				}
+				break;
+			case "Group":
+				p.shapesInArrays.add(currentShapes);
 				break;
 			default:
 				System.out.print("Default");

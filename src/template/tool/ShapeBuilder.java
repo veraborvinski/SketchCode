@@ -8,6 +8,8 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Ellipse2D.Double;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Line2D;
+import java.awt.geom.CubicCurve2D;
+import java.awt.geom.QuadCurve2D;
 
 import processing.app.Base;
 
@@ -17,8 +19,8 @@ public class ShapeBuilder {
 	Point secondPoint;
 	String processingShape = "";
 	Shape javaShape;
-	String[] shapes = {"rect", "ellipse", "arc", "line", "point", "triangle", "quad"};
-	String[] processingConstructors = {"rect(", "ellipse(", "arc(", "line(", "point(", "triangle(", "quad("};
+	String[] shapes = {"rect", "ellipse", "arc", "line", "point", "triangle", "quad", "square", "circle", "scalene", "isosceles", "equilateral", "chord", "open", "pie", "curve", "bezier"};
+	String[] processingConstructors = {"rect(", "ellipse(", "arc(", "line(", "point(", "triangle(", "quad(", "curve(", "bezier("};
 	
 	Color fill = new Color(255,255,255);
 	Color stroke = new Color(0,0,0);
@@ -107,6 +109,16 @@ public class ShapeBuilder {
 				secondPoint = new Point(Integer.valueOf(values[2]),Integer.valueOf(values[3]));
 				javaShape = new Line2D.Double(Integer.valueOf(values[0]),Integer.valueOf(values[1]),Integer.valueOf(values[2]),Integer.valueOf(values[3]));
 				break;
+	        case "curve(":
+				firstPoint = new Point(Integer.valueOf(values[2]),Integer.valueOf(values[3]));
+				secondPoint = new Point(Integer.valueOf(values[4]),Integer.valueOf(values[5]));
+				javaShape = new QuadCurve2D.Double(Integer.valueOf(values[2]),Integer.valueOf(values[3]),Integer.valueOf(values[0]),Integer.valueOf(values[1]),Integer.valueOf(values[4]),Integer.valueOf(values[5]));
+				break;
+	        case "bezier(":
+				firstPoint = new Point(Integer.valueOf(values[2]),Integer.valueOf(values[3]));
+				secondPoint = new Point(Integer.valueOf(values[6]),Integer.valueOf(values[7]));
+				javaShape = new CubicCurve2D.Double(Integer.valueOf(values[2]),Integer.valueOf(values[3]),Integer.valueOf(values[0]),Integer.valueOf(values[1]),Integer.valueOf(values[4]),Integer.valueOf(values[5]),Integer.valueOf(values[6]),Integer.valueOf(values[7]));
+				break;
 	        case "point(":
 				firstPoint = new Point(Integer.valueOf(values[0]),Integer.valueOf(values[1]));
 				secondPoint = new Point(Integer.valueOf(values[0]),Integer.valueOf(values[1]));
@@ -127,29 +139,66 @@ public class ShapeBuilder {
     	int bigX = ((x2>x1) ? x2 : x1);
     	int bigY = ((y2>y1) ? y2 : y1);
     	
+    	double startAngle = 0;
+    	double endAngle = Math.PI;
+    	
 		switch (shapeType) {
 	        case "rect":
 	        	processingShape = shapeType + "(" + x1 + ", " + y1 + ", " + Math.abs(x1-x2) + ", " + Math.abs(y1-y2) + ");";
 	        	javaShape = new Rectangle(x1,y1, Math.abs(x1-x2),Math.abs(y1-y2));
+	            break;
+	        
+	        case "square":
+	        	processingShape = "rect(" + x1 + ", " + y1 + ", " + Math.abs(x1-x2) + ", " + Math.abs(x1-x2) + ");";
+	        	javaShape = new Rectangle(x1,y1, Math.abs(x1-x2),Math.abs(x1-x2));
 	            break;
 	 
 	        case "ellipse":
 	        	processingShape = shapeType + "(" + (int)((x1+x2)/2) + ", " + (int)((y1+y2)/2) + ", " + Math.abs(x1-x2) + ", " + Math.abs(y1-y2) + ");";
 	        	javaShape = new Ellipse2D.Double(smallX,smallY, Math.abs(x1-x2),Math.abs(y1-y2));
 	            break;
-	 
-	        case "triangle":
-	        	processingShape = shapeType + "(" + x1 + ", " + y1 + ", " + Math.abs((2*x1)-x2) + ", " + y2 + ", " + x2 + ", " + y2 + ");";
-	        	int[] x = {x1,Math.abs((2*x1)-x2),x2};
-	        	int[] y = {y1,y2,y2};
-	        	javaShape = new Polygon(x,y,3);
+	            
+	        case "circle":
+	        	processingShape = "ellipse(" + (int)((x1+x2)/2) + ", " + (int)((y1+y2)/2) + ", " + Math.abs(x1-x2) + ", " + Math.abs(x1-x2) + ");";
+	        	javaShape = new Ellipse2D.Double(smallX,smallY, Math.abs(x1-x2),Math.abs(x1-x2));
 	            break;
 	 
+	        case "triangle":
+	        case "scalene":
+	        	processingShape = "triangle(" + x1 + ", " + y2 + ", " + Math.abs((2*x1)-x2) + ", " + y1 + ", " + x2 + ", " + y2 + ");";
+	        	int[] x = {x1,Math.abs((2*x1)-x2),x2};
+	        	int[] y = {y2,y1,y2};
+	        	javaShape = new Polygon(x,y,3);
+	        	break;
+	        
+	        case "isosceles":
+	        	processingShape = "triangle(" + x1 + ", " + y2 + ", " + (x1+x2)/2 + ", " + y1 + ", " + x2 + ", " + y2 + ");";
+	        	int[] xi = {x1,(x1+x2)/2,x2};
+	        	int[] yi = {y2,y1,y2};
+	        	javaShape = new Polygon(xi,yi,3);
+	        	break;
+	        
+	        case "equilateral":
+	        	processingShape = "triangle(" + x1 + ", " + y2 + ", " + (x1+x2)/2 + ", " + (y2-(int)(0.86*(x2-x1))) + ", " + x2 + ", " + y2 + ");";
+	        	int[] xe = {x1,(x1+x2)/2,x2};
+	        	int[] ye = {y2,y2-(int)(0.86*(x2-x1)),y2};
+	        	javaShape = new Polygon(xe,ye,3);
+	        	break;
+	 
 	        case "arc":
-	        	double startAngle = 0;
-	        	double endAngle = Math.PI;
-	        	processingShape = shapeType + "(" + (int)((x1+x2)/2) + ", " + (int)((y1+y2)/2) + ", " + Math.abs(x1-x2) + ", " + Math.abs(y1-y2) + ", " + (startAngle+Math.PI) + ", " + (endAngle+Math.PI) + ", PIE);";
+	        case "pie":
+	        	processingShape = "arc(" + (int)((x1+x2)/2) + ", " + (int)((y1+y2)/2) + ", " + Math.abs(x1-x2) + ", " + Math.abs(y1-y2) + ", " + (startAngle+Math.PI) + ", " + (endAngle+Math.PI) + ", PIE);";
 	        	javaShape = new Arc2D.Double(smallX,smallY, Math.abs(x1-x2), Math.abs(y1-y2), (int)Math.toDegrees(startAngle), (int)Math.toDegrees(endAngle), Arc2D.PIE);
+	        	break;
+	        	
+	        case "chord":
+	        	processingShape = "arc(" + (int)((x1+x2)/2) + ", " + (int)((y1+y2)/2) + ", " + Math.abs(x1-x2) + ", " + Math.abs(y1-y2) + ", " + (startAngle+Math.PI) + ", " + (endAngle+Math.PI) + ", CHORD);";
+	        	javaShape = new Arc2D.Double(smallX,smallY, Math.abs(x1-x2), Math.abs(y1-y2), (int)Math.toDegrees(startAngle), (int)Math.toDegrees(endAngle), Arc2D.CHORD);
+	        	break;
+	        	
+	        case "open":
+	        	processingShape = "arc(" + (int)((x1+x2)/2) + ", " + (int)((y1+y2)/2) + ", " + Math.abs(x1-x2) + ", " + Math.abs(y1-y2) + ", " + (startAngle+Math.PI) + ", " + (endAngle+Math.PI) + ", OPEN);";
+	        	javaShape = new Arc2D.Double(smallX,smallY, Math.abs(x1-x2), Math.abs(y1-y2), (int)Math.toDegrees(startAngle), (int)Math.toDegrees(endAngle), Arc2D.OPEN);
 	        	break;
 	 
 	        case "quad":
@@ -162,6 +211,16 @@ public class ShapeBuilder {
 	        case "line":
 	        	processingShape = shapeType + "(" + x1 + ", " + y1 + ", " + x2 + ", " + y2 + ");";
 	        	javaShape = new Line2D.Double(x1, y1, x2, y2);
+	            break;
+	        
+	        case "curve":
+	        	processingShape = shapeType + "(" + (x1-1) + ", " + (y1-1) + ", " + x1 + ", " + y1 + ", " + x2 + ", " + y2 + ", " + x2+1 + ", " + y2+1 +");";
+	        	javaShape = new QuadCurve2D.Double(x1,y1,x1-1,y1-1,x2,y2);
+	            break;
+	        
+	        case "bezier":
+	        	processingShape = shapeType + "(" + (x1-1) + ", " + (y1-1) + ", " + x1 + ", " + y1 + ", " + x2+1 + ", " + y2+1 + ", " + x2 + ", " + y2 + ");";
+	        	javaShape = new CubicCurve2D.Double(x1,y1,x1-1,y1-1,x2+1,y2+1,x2,y2);
 	            break;
 	 
 	        case  "point":

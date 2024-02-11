@@ -25,6 +25,9 @@ public class PanelMenu implements ActionListener{
 		panelMenu.add("Change background").addActionListener( this );
 		panelMenu.add("Paste").addActionListener( this );
 		panelMenu.add("Rezise canvas").addActionListener( this );
+		panelMenu.add("Rotate").addActionListener( this );
+		panelMenu.add("Flip").addActionListener( this );
+		panelMenu.add("Zoom").addActionListener( this );
 		
 		setSize.add(width);
 		setSize.add(height);
@@ -66,6 +69,15 @@ public class PanelMenu implements ActionListener{
 					p.f.setSize(new Dimension(Integer.valueOf(width.getText())+20,Integer.valueOf(height.getText())+20));
 					p.revalidate();
 				}
+				break;
+			case "Rotate":
+				System.out.print("Rotate");
+				break;
+			case "Flip":
+				System.out.print("Flip");
+				break;
+			case "Zoom":
+				System.out.print("Zoom");
 				break;
 			default:
 				System.out.print("Default");
