@@ -31,6 +31,11 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 	Point firstPoint = new Point(0,0);
 	Base base;
 	
+	Boolean isFlippedHorizontal = false;
+	Boolean isFlippedVertical = false;
+	int rotation = 0;
+	int zoom = 0;
+	
 	ShapeBuilder currentShape;
 	ArrayList<ShapeBuilder> copiedShapes = new ArrayList<ShapeBuilder>();
 	ComboBox comboBox = null;
@@ -60,10 +65,14 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
         super.paintComponent(g);       
         Graphics2D g2 = (Graphics2D) g;
         
+        if (zoom != 0) {
+        	g2.scale(1/zoom, 1/zoom);
+        }
+        
         for (ShapeBuilder shape: shapes){
         	AffineTransform old = g2.getTransform();
         	Rectangle shapeBounds = shape.javaShape.getBounds();
-        	g2.rotate(Math.toRadians(shape.rotation), shapeBounds.x + shapeBounds.width/2, shapeBounds.y + shapeBounds.height/2);
+        	g2.rotate(Math.toRadians((shape.rotation+rotation)%360), shapeBounds.x + shapeBounds.width/2, shapeBounds.y + shapeBounds.height/2);      	
         	g2.setColor(shape.fill);
         	g2.fill(shape.javaShape);
 			g2.setColor(shape.stroke);	
@@ -94,6 +103,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
         for(Map.Entry<String, int[]> entry : textBoxes.entrySet()) {
         	g2.drawString(entry.getKey(), entry.getValue()[0], entry.getValue()[1]);
         }
+        
         g2.dispose();
         
         if (!undoStack.contains(Arrays.asList(base.getActiveEditor().getText().split("\n")))) {
@@ -411,6 +421,18 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
     	insertProcessingLine("\t"+newText, editorLines.size()-2);
 	}
     
+    public void rotateCanvas(int angleInDegrees) {
+    	if (doesProcessingLineExists("\ttranslate("+getWidth()/2+","+getHeight()/2+");")) {
+    		int position = findProcessingLineNumber("\ttranslate("+getWidth()/2+","+getHeight()/2+");");
+    		replaceProcessingLine("\trotate("+Math.toRadians(angleInDegrees)+");", position+1);
+    	} else {
+    		int position = findProcessingLineNumber("void draw() {");
+    		insertProcessingLine("\ttranslate("+getWidth()/2+","+getHeight()/2+");", position);
+    		insertProcessingLine("\trotate("+Math.toRadians(angleInDegrees)+");", position+1);
+    		insertProcessingLine("\ttranslate(-"+getWidth()/2+",-"+getHeight()/2+");", position+2);
+    	}
+	}
+    
     public int findProcessingShapeLine(ShapeBuilder s) {
     	ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
     	return editorLines.indexOf("\t"+s.processingShape);
@@ -419,6 +441,16 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
     public String findProcessingLine(int n) {
     	ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
     	return editorLines.get(n);
+	}
+    
+    public int findProcessingLineNumber(String line) {
+    	ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
+    	return editorLines.indexOf(line);
+	}
+    
+    public Boolean doesProcessingLineExists(String line) {
+    	ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
+    	return editorLines.contains(line);
 	}
 	
 	public void insertProcessingLine(String newLine, int position) {
