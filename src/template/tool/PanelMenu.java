@@ -15,6 +15,13 @@ public class PanelMenu implements ActionListener{
 	JTextField width = new JTextField( 4 );
 	JButton confirmSize = new JButton();
 	
+	JPopupMenu rotationSelector = new JPopupMenu("Rotation");
+	JPopupMenu zoomSelector = new JPopupMenu("Zoom");
+	JSlider rotation = new JSlider(0, 360, 1);
+	JSlider zoom = new JSlider(-100, 100, 1);
+	JButton confirmRotation = new JButton();
+	JButton confirmZoom = new JButton();
+	
 	GUIPanel p;
 	Component currentComponent;
 	int currentX;
@@ -26,16 +33,35 @@ public class PanelMenu implements ActionListener{
 		panelMenu.add("Paste").addActionListener( this );
 		panelMenu.add("Rezise canvas").addActionListener( this );
 		panelMenu.add("Rotate").addActionListener( this );
-		panelMenu.add("Flip").addActionListener( this );
+		panelMenu.add("Flip horizontally").addActionListener( this );
+		panelMenu.add("Flip vertically").addActionListener( this );
 		panelMenu.add("Zoom").addActionListener( this );
 		
 		setSize.add(width);
 		setSize.add(height);
-		JLabel label2 = new JLabel("OK");
-		confirmSize.add(label2);
+		JLabel label1 = new JLabel("OK");
+		confirmSize.add(label1);
 		confirmSize.setActionCommand("confirmSize");
 		confirmSize.addActionListener(this);
         setSize.add(confirmSize);
+        
+        rotation.setMajorTickSpacing(90);
+        rotation.setPaintLabels(true);
+        rotationSelector.add(rotation);
+        JLabel label2 = new JLabel("OK");
+		confirmRotation.add(label2);
+		confirmRotation.setActionCommand("confirmRotation");
+		confirmRotation.addActionListener(this);
+		rotationSelector.add(confirmRotation);
+        
+        zoom.setMajorTickSpacing(25);
+        zoom.setPaintLabels(true);
+        zoomSelector.add(zoom);
+        JLabel label3 = new JLabel("OK");
+		confirmZoom.add(label3);
+		confirmZoom.setActionCommand("confirmZoom");
+		confirmZoom.addActionListener(this);
+		zoomSelector.add(confirmZoom);
 	}
 	
 	public void showPanelMenu(Component c, int x, int y) {
@@ -71,13 +97,27 @@ public class PanelMenu implements ActionListener{
 				}
 				break;
 			case "Rotate":
-				System.out.print("Rotate");
+				rotationSelector.show(p, currentX , currentY);
 				break;
-			case "Flip":
-				System.out.print("Flip");
+			case "confirmRotation":
+				p.rotateCanvas(rotation.getValue());
+				p.rotation = rotation.getValue();
+				p.repaint();
+				break;
+			case "Flip horizontally":
+				p.isFlippedHorizontal = !p.isFlippedHorizontal;
+				p.repaint();
+				break;
+			case "Flip vertically":
+				p.isFlippedVertical = !p.isFlippedVertical;
+				p.repaint();
 				break;
 			case "Zoom":
-				System.out.print("Zoom");
+				zoomSelector.show(p, currentX , currentY);
+				break;
+			case "confirmZoom":
+				p.zoom = zoom.getValue();
+				p.repaint();
 				break;
 			default:
 				System.out.print("Default");
