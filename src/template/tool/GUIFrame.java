@@ -91,6 +91,8 @@ public class GUIFrame extends JFrame implements ActionListener{
 	public void showGUI(Base base) { 
 		this.base = base;
 		p.base = base;
+
+		f.setMaximumSize(new Dimension(1000000,1000000));
 		
 		buttonMenus.put("bRect", new ButtonMenu(p, rectButtons));
 		buttonMenus.put("bEllipse", new ButtonMenu(p, ellipseButtons));
@@ -147,12 +149,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 		Boolean isSetupSet = false;
 		Boolean isDrawSet = false;
 		
-		if (editorLines.size() == 0) {
-	    	p.insertProcessingLine("\tbackground(" + backgroundColor + ");", 0);
-	    	p.insertProcessingLine("\tfill(250,250,250);", 1);
-	    	p.insertProcessingLine("\tstroke(" + strokeColor + ");", 2);
-	    }
-	    else if (editorLines.size() > 0) {
+		if (editorLines.size() > 0) {
 	    	for (String line: editorLines) {
 			    if (line.contains("background(")) {
 			    	isBackgroundSet = true;
@@ -174,26 +171,27 @@ public class GUIFrame extends JFrame implements ActionListener{
 			    	isDrawSet = true;
 			    }
 	    	}
-	    	if (!isBackgroundSet) {
-		    	p.insertProcessingLine("\tbackground(" + backgroundColor + ");", 1);
-		    }
-		    
-		    if (!isFillSet) {
-		    	p.insertProcessingLine("\tfill(250,250,250);", 2);
-		    }
-		    
-		    if (!isStrokeSet) {
-		    	p.insertProcessingLine("\tstroke(" + strokeColor + ");", 3);
-		    }
-		    
-		    if (!isSetupSet) {
-		    	p.insertProcessingLine("}", 4);
-		    }
-		    
-		    if (!isDrawSet) {
-		    	p.insertProcessingLine("void draw() {", 5);
-		    	p.updateCode("}");
-		    }
+	    }
+		
+		if (!isBackgroundSet) {
+	    	p.insertProcessingLine("\tbackground(" + backgroundColor + ");", 2);
+	    }
+	    
+	    if (!isFillSet) {
+	    	p.insertProcessingLine("\tfill(250,250,250);", 3);
+	    }
+	    
+	    if (!isStrokeSet) {
+	    	p.insertProcessingLine("\tstroke(" + strokeColor + ");", 4);
+	    }
+	    
+	    if (!isSetupSet) {
+	    	p.insertProcessingLine("}", 5);
+	    }
+	    
+	    if (!isDrawSet) {
+	    	p.insertProcessingLine("void draw() {", 6);
+	    	p.updateCode("}");
 	    }
 	    
 	    updateDrawingFromCode(editorLines);
@@ -202,7 +200,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 	public void updateSize(int width, int height) {
 		ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
     	base.getActiveEditor().setText("void setup() {\n\tsize(" + width + ", " + height + ");");
-        for (int i = 1; i < editorLines.size(); i++) {
+        for (int i = 2; i < editorLines.size(); i++) {
     		p.updateCode(editorLines.get(i));
     	}
 	}
@@ -285,7 +283,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 				}
 				else if (line.contains("size(")) {
 					String[] size = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",2);
-					p.setSize(new Dimension(Integer.valueOf(size[0]),Integer.valueOf(size[1])));
+					p.resize(Integer.valueOf(size[0]),Integer.valueOf(size[1]));
 				}	
 			}
 		}

@@ -17,8 +17,8 @@ public class PanelMenu implements ActionListener{
 	
 	JPopupMenu rotationSelector = new JPopupMenu("Rotation");
 	JPopupMenu zoomSelector = new JPopupMenu("Zoom");
-	JSlider rotation = new JSlider(0, 360, 1);
-	JSlider zoom = new JSlider(-100, 100, 1);
+	JSlider rotation = new JSlider(0, 360, 0);
+	JSlider zoom = new JSlider(50, 200, 100);
 	JButton confirmRotation = new JButton();
 	JButton confirmZoom = new JButton();
 	
@@ -84,16 +84,20 @@ public class PanelMenu implements ActionListener{
     			p.repaint();
 				break;
 			case "Change background":
-				System.out.print("Change bg");
-				break;
+				p.fill = JColorChooser.showDialog(currentComponent,"Select a color", Color.WHITE);
+	        	if (p.selectedShapes.size() != 0) {
+		        	p.changeFill(p.fill);
+		        	p.repaint();
+			        p.fill = null;
+	        	}
+	        	break;
 			case "Rezise canvas":
 				setSize.show(p, currentX , currentY);
 				break;
 			case "confirmSize":
 				if (width.getText() != "" && height.getText() != "") {
-					p.setMinimumSize(new Dimension(Integer.valueOf(width.getText()),Integer.valueOf(height.getText())));
-					p.f.setSize(new Dimension(Integer.valueOf(width.getText())+20,Integer.valueOf(height.getText())+20));
-					p.revalidate();
+					p.resize(Integer.valueOf(width.getText()),Integer.valueOf(height.getText()));
+					p.repaint();
 				}
 				break;
 			case "Rotate":
@@ -107,10 +111,20 @@ public class PanelMenu implements ActionListener{
 			case "Flip horizontally":
 				p.isFlippedHorizontal = !p.isFlippedHorizontal;
 				p.repaint();
+				if(p.isFlippedHorizontal) {
+					int position = p.findProcessingLineNumber("void draw() {");
+		    		p.insertProcessingLine("\tscale(1,-1);", position);
+		    		p.insertProcessingLine("\ttranslate(0,-"+p.getHeight()+");", position+1);
+				}
 				break;
 			case "Flip vertically":
 				p.isFlippedVertical = !p.isFlippedVertical;
 				p.repaint();
+				if(p.isFlippedVertical) {
+					int position = p.findProcessingLineNumber("void draw() {");
+		    		p.insertProcessingLine("\tscale(-1,1);", position);
+		    		p.insertProcessingLine("\ttranslate(-"+p.getWidth()+",0);", position+1);
+				}
 				break;
 			case "Zoom":
 				zoomSelector.show(p, currentX , currentY);
@@ -118,9 +132,10 @@ public class PanelMenu implements ActionListener{
 			case "confirmZoom":
 				p.zoom = zoom.getValue();
 				p.repaint();
+	    		p.insertProcessingLine("\tscale("+100/p.zoom+","+100/p.zoom+");", p.findProcessingLineNumber("void draw() {"));
 				break;
 			default:
-				System.out.print("Default");
+				//System.out.print("Default");
 		}
 	}
 }
