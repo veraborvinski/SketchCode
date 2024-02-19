@@ -162,6 +162,11 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
     			currentShape.fill = defaultColour;
     			currentShape.stroke = defaultStrokeColour;
     			currentShape.strokeSize = defaultStrokeSize;
+    			if (shapes.size() > 0) {
+	    			if (currentShape.shapeType != shapes.get(shapes.size()-1).shapeType) {
+	    				updateDraw("");
+	    			}
+    			}
     			shapes.add(currentShape);
     			comboBox = new ComboBox(currentShape.javaShape.getBounds());
     			findSelectedShapes();
