@@ -136,6 +136,8 @@ public class KeyListeners implements KeyListener{
 			for (ShapeBuilder shape: p.selectedShapes) {
 	        	p.shapes.remove(shape);
 	        	p.removeProcessingLine("\t"+shape.processingShape);
+	        	p.removeProcessingLine("\t"+shape.getProcessingRotate());
+	        	p.removeProcessingLine("\t"+shape.getReverseProcessingRotate());
 			}
         	p.selectedShapes.clear();
 			p.comboBox = null;

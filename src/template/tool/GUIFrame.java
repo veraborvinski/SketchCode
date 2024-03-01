@@ -66,7 +66,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 								{"bCurve", "Curver line", "/data/vector-arc-svgrepo-com.png"}, 
 								{"bBezier", "Bezier curve", "/data/spline-svgrepo-com.png"}};
 	
-	String[][] arcButtons = {{"bChord", "CHord arc", "/data/chordarc.png"},
+	String[][] arcButtons = {{"bChord", "Chord arc", "/data/chordarc.png"},
 							{"bOpen", "Open arc", "/data/openarc.png"},
 							{"bPie", "Pie arc", "/data/circle-three-quarters-svgrepo-com.png"}};
 	
@@ -200,7 +200,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 	public void updateSize(int width, int height) {
 		ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
     	base.getActiveEditor().setText("void setup() {\n\tsize(" + width + ", " + height + ");");
-        for (int i = 2; i < editorLines.size(); i++) {
+        for (int i = 1; i < editorLines.size(); i++) {
     		p.updateCode(editorLines.get(i));
     	}
 	}
@@ -305,7 +305,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 	        	keyListeners.callRedo();
 	        	break;
 	        case "bArray":
-	        	System.out.print("group shapes");
+	        	p.groupShapes();
 	        	break;
 	        case "bFill":
 	        	p.fill = JColorChooser.showDialog(this,"Select a color", Color.WHITE);
@@ -351,7 +351,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 		    	    		p.shapes.get(p.shapes.size()-1).stroke = strokeColor;
 		    	    	}
 	    	    		p.defaultStrokeColour = strokeColor;
-		    	    	p.updateCode("\t"+"stroke(" + strokeColor.getRed() + ", " + strokeColor.getGreen() + ", " + strokeColor.getBlue() + ");");
+		    	    	p.updateDraw("\t"+"stroke(" + strokeColor.getRed() + ", " + strokeColor.getGreen() + ", " + strokeColor.getBlue() + ");");
 		    	    }
 		        	p.repaint();
 	        	}
@@ -382,7 +382,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 	    	    		p.shapes.get(p.shapes.size()-1).strokeSize = newSize;
 	    	    	}
 	    	    	p.defaultStrokeSize = newSize;
-	    	    	p.updateCode("\t"+"strokeWeight(" + newSize + ");");
+	    	    	p.updateDraw("\t"+"strokeWeight(" + newSize + ");");
 	    	    }
 	        	p.repaint();
 	        	break;
@@ -393,7 +393,12 @@ public class GUIFrame extends JFrame implements ActionListener{
 	        	keyListeners.callDelete();
 	        	break;
 	        default:
-	        	if (p.currentEvent != e.getActionCommand()) {
+		        if (p.currentEvent == e.getActionCommand()) {
+	        		p.cursor = new Cursor(Cursor.DEFAULT_CURSOR);
+	        		buttons.get(p.currentEvent).setOpaque(false);
+	        		buttons.get(p.currentEvent).setBackground(Color.LIGHT_GRAY);
+	        		p.currentEvent = "";
+	        	} else if (p.currentEvent != e.getActionCommand()) {
 		        	if (buttons.keySet().contains(p.currentEvent)) {
 		        		buttons.get(p.currentEvent).setOpaque(false);
 		        		buttons.get(p.currentEvent).setBackground(Color.LIGHT_GRAY);
@@ -401,12 +406,6 @@ public class GUIFrame extends JFrame implements ActionListener{
 	        		p.cursor = new Cursor(Cursor.CROSSHAIR_CURSOR);
 	        		p.currentEvent = e.getActionCommand();
 	        		buttons.get(e.getActionCommand()).setBackground(Color.GRAY);
-	        	}
-	        	else {
-	        		p.cursor = new Cursor(Cursor.DEFAULT_CURSOR);
-	        		buttons.get(p.currentEvent).setOpaque(false);
-	        		buttons.get(p.currentEvent).setBackground(Color.LIGHT_GRAY);
-	        		p.currentEvent = "";
 	        	}
 	        	p.comboBox = null;
 	        	p.repaint();	

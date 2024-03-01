@@ -19,7 +19,7 @@ public class ComboBox {
 	
 	ComboBox(Rectangle bounds){
 		comboBox = bounds;
-		rotationPoint = new Ellipse2D.Double(comboBox.x+comboBox.width/2,comboBox.y - 10,4,4); 
+		rotationPoint = new Ellipse2D.Double(comboBox.x+comboBox.width/2,comboBox.y - 10,5,5); 
 	}
 	
 	public void moveComboBox(Point newPoint) {
@@ -28,7 +28,7 @@ public class ComboBox {
 		int width = comboBox.width;
 		int height = comboBox.height;
 		comboBox = new Rectangle(x1,y1,width,height);
-		rotationPoint = new Ellipse2D.Double(comboBox.x+comboBox.width/2,comboBox.y - 10,4,4);
+		rotationPoint = new Ellipse2D.Double(comboBox.x+comboBox.width/2,comboBox.y - 10,5,5);
 	}
 	
 	public void stretchComboBox(Point newPoint, int cursor) {
