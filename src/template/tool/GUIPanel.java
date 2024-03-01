@@ -40,7 +40,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 	ArrayList<ShapeBuilder> copiedShapes = new ArrayList<ShapeBuilder>();
 	ComboBox comboBox = null;
 	ArrayList<ShapeBuilder> selectedShapes = new ArrayList<ShapeBuilder>();
-	ArrayList<ArrayList<ShapeBuilder>> shapesInArrays = new ArrayList<ArrayList<ShapeBuilder>>();
+	ArrayList<ShapeGroup> shapeGroups = new ArrayList<ShapeGroup>();
 	
 	Color fill;
 	Color defaultColour = Color.WHITE;
@@ -157,7 +157,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
             	textBoxes.put("Hello World", coords);
             	updateDraw("text(\"Hello World\", " + firstPoint.x + ", " + firstPoint.y +");");
     		}
-    		if (currentEvent != "" && currentEvent != "bText") {
+    		if (currentEvent != "" && currentEvent != "bText" && currentEvent != "bSelect") {
     			currentShape = new ShapeBuilder(currentEvent, firstPoint, firstPoint);
     			currentShape.fill = defaultColour;
     			currentShape.stroke = defaultStrokeColour;
@@ -171,7 +171,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
     			comboBox = new ComboBox(currentShape.javaShape.getBounds());
     			findSelectedShapes();
     		}
-    		if (comboBox == null && currentEvent=="") {
+    		if (comboBox == null && (currentEvent == "" || currentEvent != "bSelect")) {
 				for (ShapeBuilder shape: shapes) {
 					if (shape.javaShape.contains(e.getPoint())) {
 		                comboBox = new ComboBox(shape.javaShape.getBounds());
@@ -189,7 +189,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
     	if (e.isPopupTrigger()) {
     		callMenu(e);
     	} else {
-    		if (currentEvent != "" && currentEvent != "bText") {
+    		if (currentEvent != "" && currentEvent != "bText" && currentEvent != "bSelect") {
     			updateDraw(currentShape.processingShape);
     			currentShape = null;
     		} 
@@ -206,17 +206,42 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 					if (findProcessingLine(firstLine-1).contains("rotate(") && !findProcessingLine(firstLine-1).contains("rotate(-")) {
     		    		replaceProcessingLine("\t"+selectedShapes.get(0).getProcessingRotate(), firstLine-1);
 			    	} else {
-			    		insertProcessingLine("\t"+selectedShapes.get(0).getProcessingRotate(), firstLine-1);
+			    		insertProcessingLine("\ttranslate("+getWidth()/2+","+getHeight()/2+");", firstLine-1);
+			    		insertProcessingLine("\t"+selectedShapes.get(0).getProcessingRotate(), firstLine);
 			    	}
 					
 					if (findProcessingLine(secondLine+1).contains("rotate(-")) {
     		    		replaceProcessingLine("\t"+selectedShapes.get(selectedShapes.size()-1).getReverseProcessingRotate(), secondLine+1);
 			    	} else {
-			    		insertProcessingLine("\t"+selectedShapes.get(selectedShapes.size()-1).getReverseProcessingRotate(), secondLine+1);
+			    		insertProcessingLine("\t"+selectedShapes.get(selectedShapes.size()-1).getReverseProcessingRotate(), secondLine+2);
+			    		insertProcessingLine("\ttranslate(-"+getWidth()/2+",-"+getHeight()/2+");", secondLine+3);
 			    	}
 				}
+				findSelectedShapes();
 			}
     	}
+    	
+    	repaint();
+    }
+    
+    public void groupShapes() {
+    	ShapeGroup shapeGroup = new ShapeGroup(selectedShapes, "Group" + String.valueOf(shapeGroups.size()+1));
+    	shapeGroups.add(shapeGroup);
+    	for (ShapeBuilder s: selectedShapes) {
+    		removeProcessingLine("\t" + s.processingShape); 
+    	}
+    	selectedShapes.clear();
+    	updateDraw(shapeGroup.classCall);
+    	updateCode(shapeGroup.classBody);
+    }
+    
+    public boolean isShapeInGroup(ShapeBuilder s) {
+    	for (ShapeGroup shapeGroup: shapeGroups) {
+    		if (shapeGroup.shapes.contains(s)){
+    			return true;
+    		}
+    	}
+    	return false;
     }
     
     public void moveShape(Point secondPoint, ArrayList<ShapeBuilder> shapesToMove, ComboBox boxToMove) {
@@ -260,6 +285,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 	    			if (shape.javaShape.contains(e.getPoint())) {
 		                selectedShapes.add(shape);
 		                comboBox = new ComboBox(shape.javaShape.getBounds());
+		                findSelectedShapes();
 		                repaint();
 		                if (fill != null) {
 		                	changeFill(fill);
@@ -342,7 +368,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 	        angle += 360;
 	    }
 	    
-		if (currentEvent != "" && currentEvent != "bText") {
+		if (currentEvent != "" && currentEvent != "bText" && currentEvent != "bSelect") {
 			if ((angle > 0 && angle < 22.5) || (angle<360 && angle>337.5)) {
 				currentShape.stretchShape(secondPoint, Cursor.N_RESIZE_CURSOR);
 			} else if (angle > 22.5 && angle < 67.5) {
@@ -361,10 +387,9 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 				currentShape.stretchShape(secondPoint, Cursor.NW_RESIZE_CURSOR);
 			}
 			comboBox = new ComboBox(currentShape.javaShape.getBounds());
-			findSelectedShapes();
 		}
 		
-		if(currentEvent == "") {
+		if(currentEvent == "" || currentEvent == "bSelect") {
 			if (comboBox != null) {
 				if (comboBox.rotationPoint.contains(firstPoint)) {
 					for (ShapeBuilder shape: selectedShapes) {
@@ -379,23 +404,28 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 					Point newDimensions = new Point(comboBox.comboBox.getBounds().width, comboBox.comboBox.getBounds().height);
 					Point newPoint = new Point(comboBox.comboBox.getBounds().x, comboBox.comboBox.getBounds().y);
 					Point difference = new Point(newDimensions.x-previousDimensions.x, newDimensions.y-previousDimensions.y);
+					
 					for (ShapeBuilder shape: selectedShapes) {
-						int lineToUpdate = findProcessingShapeLine(shape);
-						int stretchX;
-						int stretchY;
-						if (previousPoint.x != newPoint.x) {
-							stretchX = shape.firstPoint.x + difference.x;
+						if (selectedShapes.size()>1) {
+							int lineToUpdate = findProcessingShapeLine(shape);
+							int stretchX;
+							int stretchY;
+							if (previousPoint.x != newPoint.x) {
+								stretchX = shape.firstPoint.x + difference.x;
+							} else {
+								stretchX = shape.secondPoint.x + difference.x;
+							}
+							
+							if (previousPoint.y != newPoint.y) {
+								stretchY = shape.firstPoint.y - difference.y;
+							} else {
+								stretchY = shape.secondPoint.y - difference.y;
+							}
+							shape.stretchShape(new Point(stretchX, stretchY), cursorDirection);
+							replaceProcessingLine("\t"+shape.processingShape, lineToUpdate);
 						} else {
-							stretchX = shape.secondPoint.x + difference.x;
+							shape.stretchShape(secondPoint,cursorDirection);
 						}
-						
-						if (previousPoint.y != newPoint.y) {
-							stretchY = shape.firstPoint.y - difference.y;
-						} else {
-							stretchY = shape.secondPoint.y - difference.y;
-						}
-						shape.stretchShape(new Point(stretchX, stretchY), cursorDirection);
-						replaceProcessingLine("\t"+shape.processingShape, lineToUpdate);
 					}
 				} 
 			} 
@@ -451,6 +481,8 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
         	}
         }
     }
+	
+	//processing helper functions
     
     public void updateCode(String newText) {
 		base.getActiveEditor().setText(base.getActiveEditor().getText() + "\n" + newText);

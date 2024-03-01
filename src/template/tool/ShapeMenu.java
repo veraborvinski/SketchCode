@@ -127,12 +127,14 @@ public class ShapeMenu implements ActionListener{
 					p.shapes.remove(currentShape);
 					p.shapes.add(0, currentShape);
 				}
+				p.repaint();
 				break;
 			case "Bring to front":
 				for (ShapeBuilder currentShape: currentShapes) {
 					p.shapes.remove(currentShape);
 					p.shapes.add(currentShape);
 				}
+				p.repaint();
 				break;
 			case "Move":
 				setLocation.show(p, currentX , currentY);
@@ -146,9 +148,17 @@ public class ShapeMenu implements ActionListener{
 						currentShape.moveShape(new Point(Integer.valueOf(xCoords.getText()), Integer.valueOf(yCoords.getText())));
 					}
 				}
+				p.comboBox = null;
+				p.repaint();
 				break;
 			case "confirmSize":
-				System.out.print("Resize to " + width.getText() + ", " + height.getText());
+				if (width.getText() != "" && height.getText() != "") {
+					for (ShapeBuilder currentShape: currentShapes) {
+						currentShape.stretchShape(new Point(currentShape.secondPoint.x+Integer.valueOf(width.getText()), currentShape.secondPoint.y+Integer.valueOf(height.getText())),1);
+					}
+				}
+				p.comboBox = null;
+				p.repaint();
 				break;
 			case "Comment":
 				setComment.show(p, currentX , currentY);
@@ -159,7 +169,7 @@ public class ShapeMenu implements ActionListener{
 				}
 				break;
 			case "Group":
-				p.shapesInArrays.add(currentShapes);
+				p.groupShapes();
 				break;
 			default:
 				System.out.print("Default");
