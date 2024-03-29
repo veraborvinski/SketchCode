@@ -135,7 +135,7 @@ public class PanelMenu implements ActionListener{
 	    		p.insertProcessingLine("\tscale("+100/p.zoom+","+100/p.zoom+");", p.findProcessingLineNumber("void draw() {"));
 				break;
 			default:
-				//System.out.print("Default");
+				break;
 		}
 	}
 }

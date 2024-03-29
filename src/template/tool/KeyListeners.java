@@ -78,16 +78,16 @@ public class KeyListeners implements KeyListener{
 			p.repaint();
         } else if(e.getKeyCode() == KeyEvent.VK_UP && p.comboBox != null) {
         	newPoint.y -= 10;
-        	p.moveShape(newPoint,p.selectedShapes,p.comboBox);
+        	p.moveShapes(newPoint,p.selectedShapes,p.comboBox);
         } else if(e.getKeyCode() == KeyEvent.VK_DOWN && p.comboBox != null) {
         	newPoint.y += 10;
-        	p.moveShape(newPoint,p.selectedShapes,p.comboBox);
+        	p.moveShapes(newPoint,p.selectedShapes,p.comboBox);
         } else if(e.getKeyCode() == KeyEvent.VK_LEFT && p.comboBox != null) {
         	newPoint.x += 10;
-            p.moveShape(newPoint,p.selectedShapes,p.comboBox);
+            p.moveShapes(newPoint,p.selectedShapes,p.comboBox);
         } else if(e.getKeyCode() == KeyEvent.VK_RIGHT && p.comboBox != null) {
         	newPoint.x -= 10;
-            p.moveShape(newPoint,p.selectedShapes,p.comboBox);
+            p.moveShapes(newPoint,p.selectedShapes,p.comboBox);
         }
     }
 	
@@ -134,6 +134,22 @@ public class KeyListeners implements KeyListener{
 	public void callDelete() {
 		if (p.selectedShapes.size() != 0 && p.comboBox != null) {
 			for (ShapeBuilder shape: p.selectedShapes) {
+				if (p.findShapeGroup(shape) != null) {
+					p.removeProcessingLine("\t\t"+shape.processingShape);
+		        	p.removeProcessingLine("\t"+p.findShapeGroup(shape).classCall);
+		        	p.removeClass(p.findShapeGroup(shape).name.toLowerCase());
+		        	p.shapeGroups.remove(p.findShapeGroup(shape));
+	        	}
+				
+				int buttonBoundsPosition = p.findProcessingLineNumber("\t"+shape.getButtonBounds());
+				
+				if (buttonBoundsPosition != -1) {
+					while(!p.findProcessingLine(buttonBoundsPosition).contains("}")) {
+						p.removeProcessingLineByNumber(buttonBoundsPosition);
+					}
+					p.removeProcessingLineByNumber(buttonBoundsPosition);
+				}
+				
 	        	p.shapes.remove(shape);
 	        	p.removeProcessingLine("\t"+shape.processingShape);
 	        	p.removeProcessingLine("\t"+shape.getProcessingRotate());

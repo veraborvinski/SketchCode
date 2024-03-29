@@ -53,6 +53,11 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 	PanelMenu panelMenu = new PanelMenu(this);
 	ShapeMenu shapeMenu = new ShapeMenu(this);
 	GUIFrame f;
+	
+	String currentClass = null;
+	String currentAnimation = null;
+	String currentAction = null;
+	Boolean animationAsAction = false;
 
     public GUIPanel(int height, int width, GUIFrame initF) {
     	f = initF;
@@ -157,7 +162,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
             	textBoxes.put("Hello World", coords);
             	updateDraw("text(\"Hello World\", " + firstPoint.x + ", " + firstPoint.y +");");
     		}
-    		if (currentEvent != "" && currentEvent != "bText" && currentEvent != "bSelect") {
+    		if (currentEvent != "" && currentEvent != "bText" && currentEvent != "bSelect" && currentClass == null) {
     			currentShape = new ShapeBuilder(currentEvent, firstPoint, firstPoint);
     			currentShape.fill = defaultColour;
     			currentShape.stroke = defaultStrokeColour;
@@ -171,15 +176,6 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
     			comboBox = new ComboBox(currentShape.javaShape.getBounds());
     			findSelectedShapes();
     		}
-    		if (comboBox == null && (currentEvent == "" || currentEvent != "bSelect")) {
-				for (ShapeBuilder shape: shapes) {
-					if (shape.javaShape.contains(e.getPoint())) {
-		                comboBox = new ComboBox(shape.javaShape.getBounds());
-		                findSelectedShapes();
-		                repaint();
-		        	}
-		        }
-			} 
     	}
     }
     
@@ -190,41 +186,51 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
     		callMenu(e);
     	} else {
     		if (currentEvent != "" && currentEvent != "bText" && currentEvent != "bSelect") {
-    			updateDraw(currentShape.processingShape);
+    			if (currentClass == null) {
+    				updateDraw(currentShape.processingShape);
+    			} else if (currentAnimation == null) {
+    				addAnimation(currentShape); 
+    			} else {
+    				updateClass(currentClass, currentShape.processingShape);
+    				currentClass = null;
+    			}
     			currentShape = null;
-    		} 
-    		if (comboBox == null) {
-	    		comboBox = new ComboBox(new Rectangle(Math.min(firstPoint.x,secondPoint.x),Math.min(firstPoint.y,secondPoint.y),Math.abs(firstPoint.x-secondPoint.x),Math.abs(firstPoint.y-secondPoint.y)));
-				findSelectedShapes();
-				if (selectedShapes.size()==0) {
-					comboBox=null;
+    		}
+    		
+    		if (currentClass == null && currentAnimation == null) { 
+	    		if (comboBox == null) {
+		    		comboBox = new ComboBox(new Rectangle(Math.min(firstPoint.x,secondPoint.x),Math.min(firstPoint.y,secondPoint.y),Math.abs(firstPoint.x-secondPoint.x),Math.abs(firstPoint.y-secondPoint.y)));
+					findSelectedShapes();
+					if (selectedShapes.size()==0) {
+						comboBox=null;
+					}
+	    		} else {
+					if (comboBox.rotationPoint.contains(firstPoint)) {
+						int firstLine = findProcessingShapeLine(selectedShapes.get(0));
+						int secondLine = findProcessingShapeLine(selectedShapes.get(selectedShapes.size()-1));
+						if (findProcessingLine(firstLine-1).contains("rotate(") && !findProcessingLine(firstLine-1).contains("rotate(-")) {
+	    		    		replaceProcessingLine("\t"+selectedShapes.get(0).getProcessingRotate(), firstLine-1);
+				    	} else {
+				    		insertProcessingLine("\ttranslate("+getWidth()/2+","+getHeight()/2+");", firstLine-1);
+				    		insertProcessingLine("\t"+selectedShapes.get(0).getProcessingRotate(), firstLine);
+				    	}
+						
+						if (findProcessingLine(secondLine+1).contains("rotate(-")) {
+	    		    		replaceProcessingLine("\t"+selectedShapes.get(selectedShapes.size()-1).getReverseProcessingRotate(), secondLine+1);
+				    	} else {
+				    		insertProcessingLine("\t"+selectedShapes.get(selectedShapes.size()-1).getReverseProcessingRotate(), secondLine+2);
+				    		insertProcessingLine("\ttranslate(-"+getWidth()/2+",-"+getHeight()/2+");", secondLine+3);
+				    	}
+					}
+					findSelectedShapes();
 				}
-    		} else {
-				if (comboBox.rotationPoint.contains(firstPoint)) {
-					int firstLine = findProcessingShapeLine(selectedShapes.get(0));
-					int secondLine = findProcessingShapeLine(selectedShapes.get(selectedShapes.size()-1));
-					if (findProcessingLine(firstLine-1).contains("rotate(") && !findProcessingLine(firstLine-1).contains("rotate(-")) {
-    		    		replaceProcessingLine("\t"+selectedShapes.get(0).getProcessingRotate(), firstLine-1);
-			    	} else {
-			    		insertProcessingLine("\ttranslate("+getWidth()/2+","+getHeight()/2+");", firstLine-1);
-			    		insertProcessingLine("\t"+selectedShapes.get(0).getProcessingRotate(), firstLine);
-			    	}
-					
-					if (findProcessingLine(secondLine+1).contains("rotate(-")) {
-    		    		replaceProcessingLine("\t"+selectedShapes.get(selectedShapes.size()-1).getReverseProcessingRotate(), secondLine+1);
-			    	} else {
-			    		insertProcessingLine("\t"+selectedShapes.get(selectedShapes.size()-1).getReverseProcessingRotate(), secondLine+2);
-			    		insertProcessingLine("\ttranslate(-"+getWidth()/2+",-"+getHeight()/2+");", secondLine+3);
-			    	}
-				}
-				findSelectedShapes();
-			}
+    		}
     	}
-    	
     	repaint();
     }
     
     public void groupShapes() {
+    	findSelectedShapes();
     	ShapeGroup shapeGroup = new ShapeGroup(selectedShapes, "Group" + String.valueOf(shapeGroups.size()+1));
     	shapeGroups.add(shapeGroup);
     	for (ShapeBuilder s: selectedShapes) {
@@ -235,16 +241,16 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
     	updateCode(shapeGroup.classBody);
     }
     
-    public boolean isShapeInGroup(ShapeBuilder s) {
+    public ShapeGroup findShapeGroup(ShapeBuilder s) {
     	for (ShapeGroup shapeGroup: shapeGroups) {
     		if (shapeGroup.shapes.contains(s)){
-    			return true;
+    			return shapeGroup;
     		}
     	}
-    	return false;
+    	return null;
     }
     
-    public void moveShape(Point secondPoint, ArrayList<ShapeBuilder> shapesToMove, ComboBox boxToMove) {
+    public void moveShapes(Point secondPoint, ArrayList<ShapeBuilder> shapesToMove, ComboBox boxToMove) {
     	Point previousPoint = new Point(boxToMove.comboBox.getBounds().x, boxToMove.comboBox.getBounds().y);
     	boxToMove.moveComboBox(secondPoint);
     	Point newPoint = new Point(boxToMove.comboBox.getBounds().x, boxToMove.comboBox.getBounds().y);
@@ -252,8 +258,19 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
     	for (ShapeBuilder shape: shapesToMove) {
     		Point pointToMoveTo = new Point((shape.firstPoint.x+shape.secondPoint.x)/2+difference.x, (shape.firstPoint.y+shape.secondPoint.y)/2+difference.y);
 			int lineToUpdate = findProcessingShapeLine(shape);
+			String potentialButtonBounds = "\t" + shape.getButtonBounds();
+			
 			shape.moveShape(pointToMoveTo);
-			replaceProcessingLine("\t"+shape.processingShape, lineToUpdate);
+			
+			if (findShapeGroup(shape) != null) {
+				replaceProcessingLine("\t\t"+shape.processingShape, lineToUpdate);
+			} else {
+				replaceProcessingLine("\t"+shape.processingShape, lineToUpdate);
+			}
+			
+			if (findProcessingLineNumber(potentialButtonBounds) != -1) {
+				replaceProcessingLine("\t"+shape.getButtonBounds(), findProcessingLineNumber(potentialButtonBounds));
+			}
 		}
     }
     
@@ -270,6 +287,54 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
     	}
     }
     
+    public void createComboBoxFromSelectedShapes() {
+    	int x1 = Integer.MAX_VALUE;
+    	int x2 = Integer.MIN_VALUE;
+    	int y1 = Integer.MAX_VALUE; 
+    	int y2 = Integer.MIN_VALUE;
+    	for(ShapeBuilder shape: selectedShapes) {
+    		if (shape.javaShape.getBounds().x < x1) {
+    			x1 = shape.javaShape.getBounds().x;
+    		}
+    		
+    		if (shape.javaShape.getBounds().y < y1) {
+    			y1 = shape.javaShape.getBounds().y;
+    		}
+    		
+    		if (shape.javaShape.getBounds().x > x2) {
+    			x2 = shape.javaShape.getBounds().x + shape.javaShape.getBounds().width;
+    		}
+    		
+    		if (shape.javaShape.getBounds().y > y2) {
+    			y2 = shape.javaShape.getBounds().y + shape.javaShape.getBounds().height;
+    		}
+    	}
+    	
+    	comboBox = new ComboBox(new Rectangle(x1, y1, x2-x1, y2-y1));
+    }
+    
+    public boolean doesAnimationExist(String animation) {
+    	switch(animation) {
+	    	case "bUpAndDown":
+	    		if (findProcessingLineNumber("int y = 0;") != -1) {
+					return true;
+				}
+			case "bBackAndForth":
+				if (findProcessingLineNumber("int x = 0;") != -1) {
+					return true;
+				}
+			case "bExpandAndContract":
+				if (findProcessingLineNumber("int h = 0;") != -1) {
+					return true;
+				}
+				break;
+    		default:
+    			return false;
+    	}
+    	
+    	return false;
+    }
+    
     @Override
 	public void mouseClicked(MouseEvent e) {
     	if (e.isPopupTrigger()) {
@@ -283,17 +348,31 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 			else {
 				for (ShapeBuilder shape: shapes) {
 	    			if (shape.javaShape.contains(e.getPoint())) {
-		                selectedShapes.add(shape);
-		                comboBox = new ComboBox(shape.javaShape.getBounds());
-		                findSelectedShapes();
-		                repaint();
-		                if (fill != null) {
-		                	changeFill(fill);
-		    	        	selectedShapes.clear();
-		    	        	comboBox=null;
-		                	fill = null;
-		                	repaint();
-		                }
+	    				if (currentClass == null && currentAnimation == null && currentAction == null) {
+		    				if (findShapeGroup(shape) != null) {
+		    					selectedShapes.addAll(findShapeGroup(shape).shapes);
+		    					createComboBoxFromSelectedShapes();
+		    				} else {
+				                comboBox = new ComboBox(shape.javaShape.getBounds());
+				                findSelectedShapes();
+		    				}
+			                repaint();
+			                if (fill != null) {
+			                	changeFill(fill);
+			    	        	selectedShapes.clear();
+			    	        	comboBox=null;
+			                	fill = null;
+			                	repaint();
+			                }
+	    				} else if (currentAnimation != null){
+    						addAnimation(shape);
+	    				} else if (currentAction != null){
+    						addAction(shape);
+	    				} else {
+	    					removeProcessingLine("\t"+shape.processingShape);
+	    					updateClass(currentClass, shape.processingShape);
+	    					currentClass = null;
+	    				}
 	            	}
 	            }
 				if (selectedShapes.size() == 0 && fill != null) {
@@ -302,6 +381,84 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 				}
 	        }
     	}
+    }
+    
+    public void addAction(ShapeBuilder shape) {
+    	Boolean isFunctionClosed = true;
+		if (findProcessingLineNumber("void mousePressed() {") == -1) {
+			updateCode("void mousePressed() {");
+			isFunctionClosed = false;
+		}
+		
+    	switch(currentAction) {
+    		case "bBackAndForth":
+    			currentAnimation = currentAction;
+    			addAnimation(shape);
+    			insertProcessingLine("\t" + shape.getButtonBounds() + "\n\t\txCoefficient = 1;\n\t}", findProcessingLineNumber("void mousePressed() {"));	 
+    			replaceProcessingLine("int x = "+ shape.javaShape.getBounds().x +";", findProcessingLineNumber("int x = 0;"));
+    			replaceProcessingLine("int xCoefficient = 0;", findProcessingLineNumber("int xCoefficient = 1;"));
+    			break;
+    		case "bUpAndDown":
+    			currentAnimation = currentAction;
+    			addAnimation(shape);
+    			insertProcessingLine("\t" + shape.getButtonBounds() + "\n\t\tyCoefficient = 1;\n\t}", findProcessingLineNumber("void mousePressed() {"));	 
+    			replaceProcessingLine("int y = "+ shape.javaShape.getBounds().y +";", findProcessingLineNumber("int y = 0;"));
+    			replaceProcessingLine("int yCoefficient = 0;", findProcessingLineNumber("int yCoefficient = 1;"));
+    			break;
+    		case "bExpandAndContract":
+    			currentAnimation = currentAction;
+    			addAnimation(shape);
+    			insertProcessingLine("\t" + shape.getButtonBounds() + "\n\t\twhCoefficient = 1;\n\t}", findProcessingLineNumber("void mousePressed() {"));	 
+    			replaceProcessingLine("int w = "+ shape.javaShape.getBounds().width +";", findProcessingLineNumber("int w = 0;"));
+    			replaceProcessingLine("int h = "+ shape.javaShape.getBounds().height +";", findProcessingLineNumber("int h = 0;"));
+    			replaceProcessingLine("int whCoefficient = 0;", findProcessingLineNumber("int whCoefficient = 1;"));
+    			break;
+    		default:
+    			insertProcessingLine("\t" + shape.getButtonBounds() + "\n\t\tlink(\""+currentAction+"\");\n\t}", findProcessingLineNumber("void mousePressed() {"));	 
+    	}
+    	
+    	if (!isFunctionClosed){
+			updateCode("}");
+		}
+    	
+    	currentAction = null;
+    }
+    
+    public void addAnimation(ShapeBuilder shape) {
+    	int lineNumber = findProcessingLineNumber("\t"+shape.processingShape)-1;
+		removeProcessingLine("\t"+shape.processingShape);
+		String line;
+		
+		if (currentAnimation == "bBackAndForth") {
+			line = shape.processingShape.split("\\(")[0] + "(x," + shape.processingShape.split(",",2)[1];
+			
+			insertProcessingLine("\t"+line, lineNumber);
+			if (!doesAnimationExist(currentAnimation)) {
+				insertProcessingLine("\nint x = 0;\nint xCoefficient = 1;\n",findProcessingLineNumber("void draw() {")-1);
+				insertProcessingLine("\tbackground(255);\n",findProcessingLineNumber("void draw() {"));
+				updateDraw("\n\tif (x == 400 || x == -1){\n\t\txCoefficient = -xCoefficient;\n\t}\n\tx += xCoefficient;");
+			}
+		} else if (currentAnimation == "bUpAndDown") {
+			line = shape.processingShape.split(",")[0] + ", y, " + shape.processingShape.split(",", 3)[2];
+			
+			insertProcessingLine("\t"+line, lineNumber);
+			if (!doesAnimationExist(currentAnimation)) {
+				insertProcessingLine("\nint y = 0;\nint yCoefficient = 1;\n",findProcessingLineNumber("void draw() {")-1);
+				insertProcessingLine("\tbackground(255);\n",findProcessingLineNumber("void draw() {"));
+				updateDraw("\n\tif (y == 400 || y == -1){\n\t\tyCoefficient = -yCoefficient;\n\t}\n\ty += yCoefficient;");
+			}
+		} else {
+			line = shape.processingShape.split(",")[0] + "," + shape.processingShape.split(",")[1] + ", w, h);";
+			
+			insertProcessingLine("\t"+line, lineNumber);
+			if (!doesAnimationExist(currentAnimation)) {
+				insertProcessingLine("\nint w = 0;\nint h = 0;\nint whCoefficient = 1;\n",findProcessingLineNumber("void draw() {")-1);
+				insertProcessingLine("\tbackground(255);\n",findProcessingLineNumber("void draw() {"));
+				updateDraw("\n\tif ((h == 200 || h == -200) || h == 0){\n\t\twhCoefficient = -whCoefficient;\n\t}\n\th += whCoefficient;\n\tw += whCoefficient;");
+			}
+		}
+		
+		currentAnimation = null;
     }
     
     public void updateBackground(Color c) {
@@ -396,7 +553,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 						shape.rotation = (int)angle;
 					}
 				} else if (cursorDirection == 0 && comboBox.comboBox.contains(firstPoint)) {
-				 	moveShape(secondPoint,selectedShapes,comboBox);
+				 	moveShapes(secondPoint,selectedShapes,comboBox);
 				} else if (cursorDirection != 0){
 					Point previousDimensions = new Point(comboBox.comboBox.getBounds().width, comboBox.comboBox.getBounds().height);
 					Point previousPoint = new Point(comboBox.comboBox.getBounds().x, comboBox.comboBox.getBounds().y);
@@ -406,8 +563,10 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 					Point difference = new Point(newDimensions.x-previousDimensions.x, newDimensions.y-previousDimensions.y);
 					
 					for (ShapeBuilder shape: selectedShapes) {
+						int lineToUpdate = findProcessingShapeLine(shape);
+						String potentialButtonBounds = "\t" + shape.getButtonBounds();
+						
 						if (selectedShapes.size()>1) {
-							int lineToUpdate = findProcessingShapeLine(shape);
 							int stretchX;
 							int stretchY;
 							if (previousPoint.x != newPoint.x) {
@@ -422,15 +581,18 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 								stretchY = shape.secondPoint.y - difference.y;
 							}
 							shape.stretchShape(new Point(stretchX, stretchY), cursorDirection);
-							replaceProcessingLine("\t"+shape.processingShape, lineToUpdate);
 						} else {
 							shape.stretchShape(secondPoint,cursorDirection);
+						}
+						replaceProcessingLine("\t"+shape.processingShape, lineToUpdate);
+						
+						if (findProcessingLineNumber(potentialButtonBounds) != -1) {
+							replaceProcessingLine("\t"+shape.getButtonBounds(), findProcessingLineNumber(potentialButtonBounds));
 						}
 					}
 				} 
 			} 
 		}
-		
 		repaint();
     }
 	
@@ -490,7 +652,25 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
     
     public void updateDraw(String newText) {
     	ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
-    	insertProcessingLine("\t"+newText, editorLines.size()-2);
+    	
+    	base.getActiveEditor().setText(editorLines.get(0));
+		
+		boolean isInDraw = false;
+
+		for (int i = 1; i < editorLines.size()-1; i++) {
+			updateCode(editorLines.get(i));
+			
+			if (editorLines.get(i).toLowerCase().contains("void draw() {")){
+				isInDraw = true;
+			}
+			
+			if (editorLines.get(i+1).contains("}") && isInDraw){
+				updateCode("\t" + newText);
+				isInDraw = false;
+			}
+		}
+		
+		updateCode(editorLines.get(editorLines.size()-1));
 	}
     
     public void rotateCanvas(int angleInDegrees) {
@@ -506,6 +686,9 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
  
     public int findProcessingShapeLine(ShapeBuilder s) {
     	ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
+    	if (editorLines.contains("\t\t"+s.processingShape)) {
+    		return editorLines.indexOf("\t\t"+s.processingShape);
+    	}
     	return editorLines.indexOf("\t"+s.processingShape);
 	}
     
@@ -583,6 +766,51 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 		base.getActiveEditor().setText(editorLines.get(0));
 
 		for (int i = 1; i < editorLines.size(); i++) {
+			updateCode(editorLines.get(i));
+		}
+	}
+	
+	public void removeClass(String className) {
+		ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
+		
+		base.getActiveEditor().setText(editorLines.get(0));
+		
+		boolean isInClass = false;
+
+		for (int i = 1; i < editorLines.size(); i++) {
+			if (editorLines.get(i).toLowerCase().contains(className)){
+				isInClass = true;
+			}
+			
+			if (editorLines.get(i) == "}"){
+				isInClass = false;
+			}
+			
+			if (!isInClass) {
+				updateCode(editorLines.get(i));
+			} 
+		}
+	}
+	
+	public void updateClass(String className, String newLine) {
+		ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
+		
+		base.getActiveEditor().setText(editorLines.get(0));
+		
+		boolean isInClass = false;
+
+		for (int i = 1; i < editorLines.size(); i++) {
+			if (editorLines.get(i).contains(className+"{")){
+				isInClass = true;
+			}
+			
+			if (isInClass){
+				if (editorLines.get(i+1).contains("}")) {
+					updateCode("\t\t"+newLine);
+					isInClass = false;
+				}
+			}
+			
 			updateCode(editorLines.get(i));
 		}
 	}
