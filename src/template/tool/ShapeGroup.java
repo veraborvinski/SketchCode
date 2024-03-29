@@ -10,12 +10,13 @@ import processing.app.Base;
 public class ShapeGroup {
 	String classCall;
 	String classBody;
-	ArrayList<ShapeBuilder> shapes;
+	String name;
+	ArrayList<ShapeBuilder> shapes = new ArrayList<ShapeBuilder>();
 	
 	ShapeGroup(ArrayList<ShapeBuilder> initShapes, String className){
-		shapes = initShapes;
+		shapes.addAll(initShapes);
 		classCall = className + " " + className.toLowerCase() + " = new " + className + "();";
-		
+		name = className;
 		classBody = "class " + className + "{\n" + "\t" + className + "(){\n";
 		
 		for (ShapeBuilder s: shapes) {

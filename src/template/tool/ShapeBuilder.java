@@ -70,6 +70,10 @@ public class ShapeBuilder {
 		return  "rotate(-" + Math.toRadians(rotation) + ");";
 	}
 	
+	public String getButtonBounds() {
+		return  "if (mouseX >= " + javaShape.getBounds().x + " && mouseX <= " + (javaShape.getBounds().x + javaShape.getBounds().width) + " && mouseY >= "+ javaShape.getBounds().y + " && mouseY <= " + (javaShape.getBounds().y + javaShape.getBounds().height) + ") {";
+	}
+	
 	public void createShapeFromCode(String s) {
 		String[] values = s.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",");
 		switch (shapeType) {

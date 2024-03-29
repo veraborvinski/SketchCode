@@ -50,7 +50,9 @@ public class GUIFrame extends JFrame implements ActionListener{
 									{"bDelete", "Delete shape", "/data/delete-svgrepo-com.png"},
 									{"bUpdate", "Update drawing from code", "/data/update-svgrepo-com.png"},
 									{"bSelect", "Select shape", "/data/cursor-alt-svgrepo-com.png"},
-									{"bArray", "Group shapes", "/data/value-pointer-svgrepo-com.png"}};
+									{"bArray", "Group shapes", "/data/value-pointer-svgrepo-com.png"},
+									{"bAnimate", "Animate shape", "/data/stars-svgrepo-com.png"},
+									{"bButton", "Add action", "/data/button-arrow-right-svgrepo-com.png"}};
 	
 	Map<String, JButton> buttons = new HashMap<String, JButton>();
 	
@@ -74,6 +76,13 @@ public class GUIFrame extends JFrame implements ActionListener{
 									{"bIsosceles", "Isosceles triangle", "/data/triangle-svgrepo-com.png"}, 
 									{"bScalene", "Scalene triangle", "/data/triangle-hand-drawn-shape-outline-svgrepo-com.png"}};
 	
+	String[][] animationButtons = {{"bUpAndDown", "Up and down", "/data/up-and-down-arrows-svgrepo-com.png"},
+			{"bBackAndForth", "Back and forth", "/data/directional-arrows-left-and-right-svgrepo-com.png"},
+			{"bExpandAndContract", "Expand and contract", "/data/expand-svgrepo-com.png"}};
+	
+	String[][] buttonButtons = {{"bLink", "Open website", "/data/link-svgrepo-com.png"},
+			{"bAnimation", "Trigger animation", "/data/stars-svgrepo-com.png"}};
+
     Map<Integer,String> codeHistory = new HashMap<Integer,String>();
     
     int[] canvasSize = {400,400};
@@ -99,6 +108,8 @@ public class GUIFrame extends JFrame implements ActionListener{
 		buttonMenus.put("bArc", new ButtonMenu(p, arcButtons));
 		buttonMenus.put("bLine", new ButtonMenu(p, lineButtons));
 		buttonMenus.put("bTriangle", new ButtonMenu(p, triangleButtons));
+		buttonMenus.put("bAnimate", new ButtonMenu(p, animationButtons));
+		buttonMenus.put("bButton", new ButtonMenu(p, buttonButtons));
 			
 		f.setLayout(new BorderLayout());
 		
@@ -141,7 +152,6 @@ public class GUIFrame extends JFrame implements ActionListener{
     }
 	
 	public void initEditor() {
-
 		ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
 		Boolean isBackgroundSet = false;
 		Boolean isFillSet = false;
@@ -173,6 +183,8 @@ public class GUIFrame extends JFrame implements ActionListener{
 	    	}
 	    }
 		
+		updateSize(canvasSize[0], canvasSize[1]);
+		
 		if (!isBackgroundSet) {
 	    	p.insertProcessingLine("\tbackground(" + backgroundColor + ");", 2);
 	    }
@@ -200,7 +212,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 	public void updateSize(int width, int height) {
 		ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
     	base.getActiveEditor().setText("void setup() {\n\tsize(" + width + ", " + height + ");");
-        for (int i = 1; i < editorLines.size(); i++) {
+        for (int i = 2; i < editorLines.size(); i++) {
     		p.updateCode(editorLines.get(i));
     	}
 	}
@@ -297,6 +309,11 @@ public class GUIFrame extends JFrame implements ActionListener{
 			case "bUpdate":
 				ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
 				updateDrawingFromCode(editorLines);
+				break;
+			case "bAnimate":
+			case "bButton":
+				JButton button = buttons.get(e.getActionCommand());
+				buttonMenus.get(e.getActionCommand()).showButtonMenu(p, button.getX(), button.getY());
 				break;
 	        case "bUndo":
 	        	keyListeners.callUndo();

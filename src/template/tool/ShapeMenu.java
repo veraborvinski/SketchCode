@@ -14,6 +14,9 @@ public class ShapeMenu implements ActionListener{
 	JPopupMenu setSize = new JPopupMenu("SetSize");
 	JPopupMenu setComment = new JPopupMenu("SetComment");
 	JPopupMenu setArc = new JPopupMenu("SetArc");
+	JPopupMenu setNumberOfItems = new JPopupMenu("SetNumberOfItems");
+	JPopupMenu setOrderOfItems = new JPopupMenu("SetOrderOfItems");
+	
 	JTextField startAngle = new JTextField( 3 );
 	JTextField endAngle = new JTextField( 3 );
 	JTextField xCoords = new JTextField( 4 );
@@ -21,15 +24,24 @@ public class ShapeMenu implements ActionListener{
 	JTextField height = new JTextField( 4 );
 	JTextField width = new JTextField( 4 );
 	JTextField comment = new JTextField( 35 );
+	JTextField numberOfItems = new JTextField( 2 );
+	
 	JButton confirmLocation = new JButton();
 	JButton confirmSize = new JButton();
 	JButton confirmComment = new JButton();
 	JButton confirmArc = new JButton();
+	JButton confirmNumberOfItems = new JButton();
+	JButton confirmOrderOfItems = new JButton();
+	
 	Component currentComponent;
 	int currentX;
 	int currentY;
 	GUIPanel p;
-	ArrayList<ShapeBuilder> currentShapes;
+	ArrayList<ShapeBuilder> currentShapes = new ArrayList<ShapeBuilder>();
+	
+	boolean isArcOptionShowing = false;
+	boolean isClassOptionShowing = false;
+	boolean isToClassOptionShowing = false;
 	
 	public ShapeMenu(GUIPanel initP){
 		p = initP;
@@ -73,8 +85,9 @@ public class ShapeMenu implements ActionListener{
 		currentComponent = c;
 		currentX = x;
 		currentY = y;
-		currentShapes = shapes;
-		if (shapes.size() == 1 && shapes.get(0).processingShape.contains("arc(")) {
+		currentShapes.addAll(shapes);
+		
+		if (shapes.size() == 1 && shapes.get(0).processingShape.contains("arc(") && !isArcOptionShowing) {
 			shapeMenu.add("Redraw arc").addActionListener( this );
 			setArc.add(startAngle);
 			setArc.add(endAngle);
@@ -83,18 +96,84 @@ public class ShapeMenu implements ActionListener{
 			confirmArc.setActionCommand("confirmArc");
 			confirmArc.addActionListener(this);
 			setArc.add(confirmArc);
+			isArcOptionShowing = true;
+		} else if (shapes.size() == 1) {
+			shapeMenu.add("Animate").addActionListener( this );
+			shapeMenu.add("Add action").addActionListener( this );
+			if (p.findShapeGroup(shapes.get(0)) != null && !isClassOptionShowing) {
+				shapeMenu.add("Select class").addActionListener( this );
+				shapeMenu.add("Remove from class").addActionListener( this );
+				shapeMenu.add("Edit class").addActionListener( this );
+				
+				for (ShapeBuilder s: p.findShapeGroup(shapes.get(0)).shapes) {
+					setOrderOfItems.add(s.processingShape).addActionListener( this );
+				}
+				
+				setOrderOfItems.add("Add shape").addActionListener( this );
+				isClassOptionShowing = true;
+			} else if (!isToClassOptionShowing) {
+				shapeMenu.add("Create class").addActionListener( this );
+				
+				JLabel label6 = new JLabel("Number of shapes: ");
+				setNumberOfItems.add(label6);
+				setNumberOfItems.add(numberOfItems);
+				JLabel label5 = new JLabel("OK");
+				confirmNumberOfItems.add(label5);
+				confirmNumberOfItems.setActionCommand("confirmNumberOfItems");
+				confirmNumberOfItems.addActionListener(this);
+				setNumberOfItems.add(confirmNumberOfItems);
+				
+				isToClassOptionShowing = true;
+			}
 		}
     }
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		switch (e.getActionCommand()) { 
+			case "Animate":
+				p.f.buttonMenus.get("bAnimate").shape = currentShapes.get(0);
+				p.f.buttonMenus.get("bAnimate").showButtonMenu(p, currentX, currentY);
+				break;
+			case "Add action":
+				p.f.buttonMenus.get("bButton").shape = currentShapes.get(0);
+				p.f.buttonMenus.get("bButton").showButtonMenu(p, currentX, currentY);
+				break;
+			case "Edit class":
+				setOrderOfItems.show(p, currentX, currentY);
+				break;
+			case "Select class":
+				p.selectedShapes.clear();
+				p.selectedShapes.addAll(p.findShapeGroup(currentShapes.get(0)).shapes);
+				p.createComboBoxFromSelectedShapes();
+				p.repaint();
+				break;
+			case "Remove from class":
+				p.findShapeGroup(currentShapes.get(0)).shapes.remove(currentShapes.get(0));
+				p.removeProcessingLine("\t\t"+currentShapes.get(0).processingShape);
+				p.updateDraw("\t"+currentShapes.get(0).processingShape);
+				break;
+			case "Create class":
+				setNumberOfItems.show(p, currentX, currentY);
+				break;
+			case "confirmNumberOfItems":
+				if (numberOfItems.getText() != "") {
+					ArrayList<ShapeBuilder> clonedShapes = new ArrayList<>(Collections.nCopies(Integer.valueOf(numberOfItems.getText()), currentShapes.get(0)));
+					p.shapes.addAll(clonedShapes);
+					p.selectedShapes.clear();
+					p.selectedShapes.addAll(clonedShapes);
+					p.groupShapes();
+				}
+				p.repaint();
+				break;
 			case "Redraw arc":
 				setArc.show(p, currentX, currentY);
 				break;
 			case "confirmArc":
 				if (startAngle.getText() != "" && endAngle.getText() != "") {
-					System.out.print(startAngle.getText() + endAngle.getText() );
+					String[] splitArc = currentShapes.get(0).processingShape.split(",");
+					p.replaceProcessingLine("\t" + splitArc[0] + "," + splitArc[1] + "," + splitArc[2] + "," + splitArc[3] + ", " + String.valueOf(Math.toRadians(Integer.valueOf(startAngle.getText()))) + ", " + String.valueOf(Math.toRadians(Integer.valueOf(endAngle.getText()))) + "," + splitArc[6], p.findProcessingShapeLine(currentShapes.get(0)));
+					p.f.updateDrawingFromCode(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
 				}
 				break;
 			case "Copy":
@@ -126,6 +205,8 @@ public class ShapeMenu implements ActionListener{
 				for (ShapeBuilder currentShape: currentShapes) {
 					p.shapes.remove(currentShape);
 					p.shapes.add(0, currentShape);
+					p.removeProcessingLine("\t"+currentShape.processingShape);
+					p.insertProcessingLine("\t"+currentShape.processingShape, p.findProcessingLineNumber("void draw() {"));
 				}
 				p.repaint();
 				break;
@@ -133,6 +214,8 @@ public class ShapeMenu implements ActionListener{
 				for (ShapeBuilder currentShape: currentShapes) {
 					p.shapes.remove(currentShape);
 					p.shapes.add(currentShape);
+					p.removeProcessingLine("\t"+currentShape.processingShape);
+					p.updateDraw(currentShape.processingShape);
 				}
 				p.repaint();
 				break;
@@ -171,8 +254,17 @@ public class ShapeMenu implements ActionListener{
 			case "Group":
 				p.groupShapes();
 				break;
+			case "Add shape":
+				p.currentClass = p.findShapeGroup(currentShapes.get(0)).name;
 			default:
-				System.out.print("Default");
+				for (ShapeBuilder s: p.shapes) {
+					if (e.getActionCommand() == s.processingShape) {
+						currentShapes.clear();
+						currentShapes.add(s);
+						showShapeMenu(p, currentX, currentY, currentShapes);
+					}
+				}
+				break;
 		}
 	}
 }
