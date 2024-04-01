@@ -134,6 +134,13 @@ public class KeyListeners implements KeyListener{
 	public void callDelete() {
 		if (p.selectedShapes.size() != 0 && p.comboBox != null) {
 			for (ShapeBuilder shape: p.selectedShapes) {
+				for(TextBox textBox: p.textBoxes) {
+					if (textBox.bounds == shape) {
+						p.removeProcessingLine("\t"+textBox.getProcessingText());
+						p.textBoxes.remove(textBox);
+					}
+				}
+				
 				if (p.findShapeGroup(shape) != null) {
 					p.removeProcessingLine("\t\t"+shape.processingShape);
 		        	p.removeProcessingLine("\t"+p.findShapeGroup(shape).classCall);

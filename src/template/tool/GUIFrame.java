@@ -82,6 +82,10 @@ public class GUIFrame extends JFrame implements ActionListener{
 	
 	String[][] buttonButtons = {{"bLink", "Open website", "/data/link-svgrepo-com.png"},
 			{"bAnimation", "Trigger animation", "/data/stars-svgrepo-com.png"}};
+	
+	JPopupMenu setText = new JPopupMenu("SetText");
+	JTextField text = new JTextField( 35 );
+	JButton confirmText = new JButton();
 
     Map<Integer,String> codeHistory = new HashMap<Integer,String>();
     
@@ -135,6 +139,13 @@ public class GUIFrame extends JFrame implements ActionListener{
         confirmStroke.setActionCommand("confirmStroke");
         confirmStroke.addActionListener(this);
         strokeSelector.add(confirmStroke);
+        
+        setText.add(text);
+		JLabel label3 = new JLabel("OK");
+		confirmText.add(label3);
+		confirmText.setActionCommand("confirmText");
+		confirmText.addActionListener(this);
+        setText.add(confirmText);
 		
 	    f.setSize(new Dimension(canvasSize[0] + 20, canvasSize[1] + 20));
 	    
@@ -409,20 +420,40 @@ public class GUIFrame extends JFrame implements ActionListener{
 	        case "bDelete":
 	        	keyListeners.callDelete();
 	        	break;
+	        case "bText":
+	        	if (p.currentEvent == "confirmText") {
+	        		buttons.get("bText").setOpaque(false);
+	        		buttons.get("bText").setBackground(Color.LIGHT_GRAY);
+	        		p.currentEvent = "";
+	        	} else {
+	        		buttons.get("bText").setBackground(Color.GRAY);
+	        		setText.show(p, buttons.get("bText").getX(), buttons.get("bText").getY());
+	        	}
+	        	break;
 	        default:
 		        if (p.currentEvent == e.getActionCommand()) {
 	        		p.cursor = new Cursor(Cursor.DEFAULT_CURSOR);
-	        		buttons.get(p.currentEvent).setOpaque(false);
-	        		buttons.get(p.currentEvent).setBackground(Color.LIGHT_GRAY);
+	        		
+	        		if (buttons.keySet().contains(p.currentEvent)) {
+		        		buttons.get(p.currentEvent).setOpaque(false);
+		        		buttons.get(p.currentEvent).setBackground(Color.LIGHT_GRAY);
+	        		} 
+	        		
 	        		p.currentEvent = "";
 	        	} else if (p.currentEvent != e.getActionCommand()) {
 		        	if (buttons.keySet().contains(p.currentEvent)) {
 		        		buttons.get(p.currentEvent).setOpaque(false);
 		        		buttons.get(p.currentEvent).setBackground(Color.LIGHT_GRAY);
+	        		} else if (p.currentEvent == "confirmText") {
+	        			buttons.get("bText").setOpaque(false);
+		        		buttons.get("bText").setBackground(Color.LIGHT_GRAY);
 	        		}	
 	        		p.cursor = new Cursor(Cursor.CROSSHAIR_CURSOR);
 	        		p.currentEvent = e.getActionCommand();
-	        		buttons.get(e.getActionCommand()).setBackground(Color.GRAY);
+	        		
+	        		if (buttons.keySet().contains(p.currentEvent)) {
+	        			buttons.get(e.getActionCommand()).setBackground(Color.GRAY);
+	        		}
 	        	}
 	        	p.comboBox = null;
 	        	p.repaint();	
