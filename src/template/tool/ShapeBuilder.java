@@ -229,7 +229,8 @@ public class ShapeBuilder {
 	 
 	        case  "point":
 	        	processingShape = shapeType + "(" + x1 + ", " + y1 + ");";
-	        	javaShape = new Ellipse2D.Double(x1,y1,1,1);
+	        	javaShape = new Rectangle(x1,y1,strokeSize,strokeSize);
+	        	this.fill = new Color(0,0,0);
 	            break;
 		}
 	}
