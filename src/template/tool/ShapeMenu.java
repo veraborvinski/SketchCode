@@ -42,6 +42,9 @@ public class ShapeMenu implements ActionListener{
 	boolean isArcOptionShowing = false;
 	boolean isClassOptionShowing = false;
 	boolean isToClassOptionShowing = false;
+	boolean isAnimationOptionShowing = false;
+	
+	ShapeGroup currentClass = null;
 	
 	public ShapeMenu(GUIPanel initP){
 		p = initP;
@@ -98,20 +101,24 @@ public class ShapeMenu implements ActionListener{
 			setArc.add(confirmArc);
 			isArcOptionShowing = true;
 		} else if (shapes.size() == 1) {
-			shapeMenu.add("Animate").addActionListener( this );
-			shapeMenu.add("Add action").addActionListener( this );
+			if (!isAnimationOptionShowing) {
+				shapeMenu.add("Animate").addActionListener( this );
+				shapeMenu.add("Add action").addActionListener( this );
+				isAnimationOptionShowing = true;
+			}
 			if (p.findShapeGroup(shapes.get(0)) != null && !isClassOptionShowing) {
-				shapeMenu.add("Select class").addActionListener( this );
+				currentClass = p.findShapeGroup(shapes.get(0));
 				shapeMenu.add("Remove from class").addActionListener( this );
 				shapeMenu.add("Edit class").addActionListener( this );
-				
-				for (ShapeBuilder s: p.findShapeGroup(shapes.get(0)).shapes) {
-					setOrderOfItems.add(s.processingShape).addActionListener( this );
-				}
-				
-				setOrderOfItems.add("Add shape").addActionListener( this );
 				isClassOptionShowing = true;
-			} else if (!isToClassOptionShowing) {
+				isToClassOptionShowing = true;
+			} else if (p.findShapeGroup(shapes.get(0)) == null && isClassOptionShowing) {
+				shapeMenu.remove(12);
+				shapeMenu.remove(11);
+				isClassOptionShowing = false;
+				isToClassOptionShowing = false;
+			} 
+			if (!isToClassOptionShowing && p.findShapeGroup(shapes.get(0)) == null) {
 				shapeMenu.add("Create class").addActionListener( this );
 				
 				JLabel label6 = new JLabel("Number of shapes: ");
@@ -134,36 +141,61 @@ public class ShapeMenu implements ActionListener{
 			case "Animate":
 				p.f.buttonMenus.get("bAnimate").shape = currentShapes.get(0);
 				p.f.buttonMenus.get("bAnimate").showButtonMenu(p, currentX, currentY);
+		        
+		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		        }
 				break;
 			case "Add action":
 				p.f.buttonMenus.get("bButton").shape = currentShapes.get(0);
 				p.f.buttonMenus.get("bButton").showButtonMenu(p, currentX, currentY);
+		        
+		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		        }
 				break;
 			case "Edit class":
-				setOrderOfItems.show(p, currentX, currentY);
-				break;
-			case "Select class":
-				p.selectedShapes.clear();
-				p.selectedShapes.addAll(p.findShapeGroup(currentShapes.get(0)).shapes);
-				p.createComboBoxFromSelectedShapes();
-				p.repaint();
+				if (currentClass != null) {
+					setOrderOfItems = null;
+					setOrderOfItems = new JPopupMenu("SetOrderOfItems");
+					
+					for (ShapeBuilder s: currentClass.shapes) {
+						setOrderOfItems.add(s.processingShape).addActionListener( this );
+					}
+					
+					setOrderOfItems.add("Add shape").addActionListener( this );
+					setOrderOfItems.show(p, currentX, currentY);
+				}
 				break;
 			case "Remove from class":
 				p.findShapeGroup(currentShapes.get(0)).shapes.remove(currentShapes.get(0));
 				p.removeProcessingLine("\t\t"+currentShapes.get(0).processingShape);
-				p.updateDraw("\t"+currentShapes.get(0).processingShape);
+				p.updateDraw(currentShapes.get(0).processingShape);
+		        
+		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		        }
 				break;
 			case "Create class":
 				setNumberOfItems.show(p, currentX, currentY);
 				break;
 			case "confirmNumberOfItems":
 				if (numberOfItems.getText() != "") {
-					ArrayList<ShapeBuilder> clonedShapes = new ArrayList<>(Collections.nCopies(Integer.valueOf(numberOfItems.getText()), currentShapes.get(0)));
-					p.shapes.addAll(clonedShapes);
 					p.selectedShapes.clear();
-					p.selectedShapes.addAll(clonedShapes);
+					p.shapes.add(currentShapes.get(0));
+					p.selectedShapes.add(currentShapes.get(0));
+					for (int i = 1; i < Integer.valueOf(numberOfItems.getText()); i++) {
+						ShapeBuilder clonedShape = new ShapeBuilder(currentShapes.get(0).shapeType, new Point(currentShapes.get(0).firstPoint.x+10*i,currentShapes.get(0).firstPoint.y+10*i), new Point(currentShapes.get(0).secondPoint.x+10*i,currentShapes.get(0).secondPoint.y+10*i));
+						p.shapes.add(clonedShape);
+						p.selectedShapes.add(clonedShape);
+					}
+					p.createComboBoxFromSelectedShapes();
 					p.groupShapes();
 				}
+		        
+		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		        }
 				p.repaint();
 				break;
 			case "Redraw arc":
@@ -175,11 +207,19 @@ public class ShapeMenu implements ActionListener{
 					p.replaceProcessingLine("\t" + splitArc[0] + "," + splitArc[1] + "," + splitArc[2] + "," + splitArc[3] + ", " + String.valueOf(Math.toRadians(Integer.valueOf(startAngle.getText()))) + ", " + String.valueOf(Math.toRadians(Integer.valueOf(endAngle.getText()))) + "," + splitArc[6], p.findProcessingShapeLine(currentShapes.get(0)));
 					p.f.updateDrawingFromCode(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
 				}
+		        
+		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		        }
 				break;
 			case "Copy":
 				p.copiedShapes.clear();
 				p.copiedShapes.addAll(currentShapes);
 				p.repaint();
+		        
+		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		        }
 				break;
 			case "Paste":
 				for (ShapeBuilder copiedShape: p.copiedShapes) {
@@ -188,6 +228,10 @@ public class ShapeMenu implements ActionListener{
 					p.shapes.add(shapeToPaste);
 					p.updateDraw(shapeToPaste.processingShape);
 				}
+		        
+		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		        }
 				p.repaint();
 				break;
 			case "Cut":
@@ -199,6 +243,10 @@ public class ShapeMenu implements ActionListener{
 				}
 				p.selectedShapes.clear();
     			p.comboBox = null;
+    	        
+    	        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+    	        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+    	        }
 				p.repaint();
 				break;
 			case "Send to back":
@@ -208,6 +256,10 @@ public class ShapeMenu implements ActionListener{
 					p.removeProcessingLine("\t"+currentShape.processingShape);
 					p.insertProcessingLine("\t"+currentShape.processingShape, p.findProcessingLineNumber("void draw() {"));
 				}
+		        
+		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		        }
 				p.repaint();
 				break;
 			case "Bring to front":
@@ -217,6 +269,10 @@ public class ShapeMenu implements ActionListener{
 					p.removeProcessingLine("\t"+currentShape.processingShape);
 					p.updateDraw(currentShape.processingShape);
 				}
+		        
+		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		        }
 				p.repaint();
 				break;
 			case "Move":
@@ -228,19 +284,31 @@ public class ShapeMenu implements ActionListener{
 			case "confirmLocation":
 				if (xCoords.getText() != "" && yCoords.getText() != "") {
 					for (ShapeBuilder currentShape: currentShapes) {
-						currentShape.moveShape(new Point(Integer.valueOf(xCoords.getText()), Integer.valueOf(yCoords.getText())));
+						String oldLine = currentShape.processingShape;
+						currentShape.moveShape(new Point(Integer.valueOf(xCoords.getText())+currentShape.javaShape.getBounds().width/2, Integer.valueOf(yCoords.getText())+currentShape.javaShape.getBounds().height/2));
+						p.replaceProcessingLine("\t"+currentShape.processingShape, p.findProcessingLineNumber("\t"+oldLine));
 					}
 				}
 				p.comboBox = null;
+		        
+		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		        }
 				p.repaint();
 				break;
 			case "confirmSize":
 				if (width.getText() != "" && height.getText() != "") {
 					for (ShapeBuilder currentShape: currentShapes) {
-						currentShape.stretchShape(new Point(currentShape.secondPoint.x+Integer.valueOf(width.getText()), currentShape.secondPoint.y+Integer.valueOf(height.getText())),1);
+						String oldLine = currentShape.processingShape;
+						currentShape.stretchShape(new Point(currentShape.firstPoint.x+Integer.valueOf(width.getText()), currentShape.firstPoint.y+Integer.valueOf(height.getText())),Cursor.SE_RESIZE_CURSOR);
+						p.replaceProcessingLine("\t"+currentShape.processingShape, p.findProcessingLineNumber("\t"+oldLine));
 					}
 				}
 				p.comboBox = null;
+		        
+		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		        }
 				p.repaint();
 				break;
 			case "Comment":
@@ -250,9 +318,17 @@ public class ShapeMenu implements ActionListener{
 				for (ShapeBuilder currentShape: currentShapes) {
 					p.insertProcessingLine("\t//" + comment.getText(), p.findProcessingShapeLine(currentShape)-1);
 				}
+		        
+		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		        }
 				break;
 			case "Group":
 				p.groupShapes();
+		        
+		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		        }
 				break;
 			case "Add shape":
 				p.currentClass = p.findShapeGroup(currentShapes.get(0)).name;

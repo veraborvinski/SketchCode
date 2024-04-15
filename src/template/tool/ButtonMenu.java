@@ -84,7 +84,42 @@ public class ButtonMenu implements ActionListener{
 				}
 				break;
 			default:
-				p.currentEvent = e.getActionCommand();
+				if (p.currentEvent == e.getActionCommand()) {
+					if(e.getActionCommand() == "bCircle") {
+    					p.f.buttons.get("bEllipse").setOpaque(false);
+        				p.f.buttons.get("bEllipse").setBackground(Color.LIGHT_GRAY);
+        			} else if (e.getActionCommand() == "bSquare") {
+    					p.f.buttons.get("bRect").setOpaque(false);
+        				p.f.buttons.get("bRect").setBackground(Color.LIGHT_GRAY);
+        			} else if (e.getActionCommand() == "bCurve" || e.getActionCommand() == "bBezier") {
+    					p.f.buttons.get("bLine").setOpaque(false);
+        				p.f.buttons.get("bLine").setBackground(Color.LIGHT_GRAY);
+        			} else if (e.getActionCommand() == "bScalene" || e.getActionCommand() == "bIsosceles" || e.getActionCommand() == "bEquilateral") {
+    					p.f.buttons.get("bTriangle").setOpaque(false);
+        				p.f.buttons.get("bTriangle").setBackground(Color.LIGHT_GRAY);
+        			} else if (e.getActionCommand() == "bChord" || e.getActionCommand() == "bOpen" || e.getActionCommand() == "bPie") {
+    					p.f.buttons.get("bArc").setOpaque(false);
+        				p.f.buttons.get("bArc").setBackground(Color.LIGHT_GRAY);
+        			}
+	        		
+	        		p.currentEvent = "";
+	        	} else if (p.currentEvent != e.getActionCommand()) {
+	        		p.f.keyListeners.deselectAll();
+	        		
+	        		p.currentEvent = e.getActionCommand();
+	        		
+        			if(e.getActionCommand() == "bCircle") {
+        				p.f.buttons.get("bEllipse").setBackground(Color.GRAY);
+        			} else if (e.getActionCommand() == "bSquare") {
+        				p.f.buttons.get("bRect").setBackground(Color.GRAY);
+        			} else if (e.getActionCommand() == "bCurve" || e.getActionCommand() == "bBezier") {
+        				p.f.buttons.get("bLine").setBackground(Color.GRAY);
+        			} else if (e.getActionCommand() == "bScalene" || e.getActionCommand() == "bIsosceles" || e.getActionCommand() == "bEquilateral") {
+        				p.f.buttons.get("bTriangle").setBackground(Color.GRAY);
+        			} else if (e.getActionCommand() == "bChord" || e.getActionCommand() == "bOpen" || e.getActionCommand() == "bPie") {
+        				p.f.buttons.get("bArc").setBackground(Color.GRAY);
+        			}  
+	        	}
 		}
 	}
 }

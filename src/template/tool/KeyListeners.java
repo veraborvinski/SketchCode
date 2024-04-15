@@ -20,9 +20,7 @@ public class KeyListeners implements KeyListener{
 	
 	@Override
 	public void keyPressed(KeyEvent e) {
-		Point newPoint = new Point(p.comboBox.comboBox.x + p.comboBox.comboBox.width/2, p.comboBox.comboBox.y + p.comboBox.comboBox.height/2);
-
-        if(e.getKeyCode() == KeyEvent.VK_Z && e.getModifiersEx() == KeyEvent.CTRL_DOWN_MASK) {
+		if(e.getKeyCode() == KeyEvent.VK_Z && e.getModifiersEx() == KeyEvent.CTRL_DOWN_MASK) {
             callUndo();
         } else if(e.getKeyCode() == KeyEvent.VK_Z && e.getModifiersEx() == KeyEvent.META_DOWN_MASK) {
             callUndo();
@@ -30,15 +28,27 @@ public class KeyListeners implements KeyListener{
             callRedo();
         } else if(e.getKeyCode() == KeyEvent.VK_Y && e.getModifiersEx() == KeyEvent.META_DOWN_MASK) {
             callRedo();
+		} else if(e.getKeyCode() == KeyEvent.VK_A && e.getModifiersEx() == KeyEvent.CTRL_DOWN_MASK) {
+            selectAll();
+        } else if(e.getKeyCode() == KeyEvent.VK_A && e.getModifiersEx() == KeyEvent.META_DOWN_MASK) {
+        	selectAll();
 		} else if(e.getKeyCode() == KeyEvent.VK_BACK_SPACE || e.getKeyChar() == KeyEvent.VK_DELETE) {
             callDelete();
         } else if(e.getKeyCode() == KeyEvent.VK_C && e.getModifiersEx() == KeyEvent.CTRL_DOWN_MASK) {
         	p.copiedShapes.clear();
         	p.copiedShapes.addAll(p.selectedShapes);
+            
+            if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+            	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+            }
         	p.repaint();
         } else if(e.getKeyCode() == KeyEvent.VK_C && e.getModifiersEx() == KeyEvent.META_DOWN_MASK) {
         	p.copiedShapes.clear();
         	p.copiedShapes.addAll(p.selectedShapes);
+            
+            if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+            	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+            }
         	p.repaint();
         } else if(e.getKeyCode() == KeyEvent.VK_V && e.getModifiersEx() == KeyEvent.CTRL_DOWN_MASK) {
         	for (ShapeBuilder copiedShape: p.copiedShapes) {
@@ -47,6 +57,10 @@ public class KeyListeners implements KeyListener{
 				p.shapes.add(shapeToPaste);
 				p.updateDraw(shapeToPaste.processingShape);
 			}
+            
+            if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+            	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+            }
         	p.repaint();
         } else if(e.getKeyCode() == KeyEvent.VK_V && e.getModifiersEx() == KeyEvent.META_DOWN_MASK) {
         	for (ShapeBuilder copiedShape: p.copiedShapes) {
@@ -55,6 +69,10 @@ public class KeyListeners implements KeyListener{
 				p.shapes.add(shapeToPaste);
 				p.updateDraw(shapeToPaste.processingShape);
 			}
+            
+            if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+            	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+            }
         	p.repaint();
         } else if(e.getKeyCode() == KeyEvent.VK_X && e.getModifiersEx() == KeyEvent.CTRL_DOWN_MASK) {
         	p.copiedShapes.clear();
@@ -65,6 +83,10 @@ public class KeyListeners implements KeyListener{
 			}
 			p.selectedShapes.clear();
 			p.comboBox = null;
+	        
+	        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+	        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+	        }
 			p.repaint();
         } else if(e.getKeyCode() == KeyEvent.VK_X && e.getModifiersEx() == KeyEvent.META_DOWN_MASK) {
         	p.copiedShapes.clear();
@@ -75,19 +97,29 @@ public class KeyListeners implements KeyListener{
 			}
 			p.selectedShapes.clear();
 			p.comboBox = null;
+	        
+	        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+	        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+	        }
 			p.repaint();
-        } else if(e.getKeyCode() == KeyEvent.VK_UP && p.comboBox != null) {
-        	newPoint.y -= 10;
-        	p.moveShapes(newPoint,p.selectedShapes,p.comboBox);
-        } else if(e.getKeyCode() == KeyEvent.VK_DOWN && p.comboBox != null) {
-        	newPoint.y += 10;
-        	p.moveShapes(newPoint,p.selectedShapes,p.comboBox);
-        } else if(e.getKeyCode() == KeyEvent.VK_LEFT && p.comboBox != null) {
-        	newPoint.x += 10;
-            p.moveShapes(newPoint,p.selectedShapes,p.comboBox);
-        } else if(e.getKeyCode() == KeyEvent.VK_RIGHT && p.comboBox != null) {
-        	newPoint.x -= 10;
-            p.moveShapes(newPoint,p.selectedShapes,p.comboBox);
+        } else if(e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+        	deselectAll();
+        } else if (p.comboBox != null) {
+        	Point newPoint = new Point(p.comboBox.comboBox.x + p.comboBox.comboBox.width/2, p.comboBox.comboBox.y + p.comboBox.comboBox.height/2);
+
+        	if(e.getKeyCode() == KeyEvent.VK_UP && p.comboBox != null) {
+            	newPoint.y -= 10;
+            	p.moveShapes(newPoint,p.selectedShapes,p.comboBox);
+            } else if(e.getKeyCode() == KeyEvent.VK_DOWN && p.comboBox != null) {
+            	newPoint.y += 10;
+            	p.moveShapes(newPoint,p.selectedShapes,p.comboBox);
+            } else if(e.getKeyCode() == KeyEvent.VK_LEFT && p.comboBox != null) {
+            	newPoint.x += 10;
+                p.moveShapes(newPoint,p.selectedShapes,p.comboBox);
+            } else if(e.getKeyCode() == KeyEvent.VK_RIGHT && p.comboBox != null) {
+            	newPoint.x -= 10;
+                p.moveShapes(newPoint,p.selectedShapes,p.comboBox);
+            } 
         }
     }
 	
@@ -99,6 +131,33 @@ public class KeyListeners implements KeyListener{
 	@Override
 	public void keyTyped(KeyEvent e) {
 
+	}
+	
+	public void selectAll() {
+		p.selectedShapes = p.shapes;
+        p.createComboBoxFromSelectedShapes();
+        p.repaint();
+	}
+	
+	public void deselectAll() {
+		f.buttons.get("bEllipse").setOpaque(false);
+		f.buttons.get("bEllipse").setBackground(Color.LIGHT_GRAY);
+		f.buttons.get("bRect").setOpaque(false);
+		f.buttons.get("bRect").setBackground(Color.LIGHT_GRAY);
+		f.buttons.get("bLine").setOpaque(false);
+		f.buttons.get("bLine").setBackground(Color.LIGHT_GRAY);
+		f.buttons.get("bTriangle").setOpaque(false);
+		f.buttons.get("bTriangle").setBackground(Color.LIGHT_GRAY);
+		f.buttons.get("bQuad").setOpaque(false);
+		f.buttons.get("bQuad").setBackground(Color.LIGHT_GRAY);
+		f.buttons.get("bPoint").setOpaque(false);
+		f.buttons.get("bPoint").setBackground(Color.LIGHT_GRAY);
+		f.buttons.get("bArc").setOpaque(false);
+		f.buttons.get("bArc").setBackground(Color.LIGHT_GRAY);
+		f.buttons.get("bText").setOpaque(false);
+		f.buttons.get("bText").setBackground(Color.LIGHT_GRAY);
+		
+		p.currentEvent = "";
 	}
 	
 	public void callUndo() {
@@ -165,6 +224,11 @@ public class KeyListeners implements KeyListener{
         	p.selectedShapes.clear();
 			p.comboBox = null;
     	}
+        
+        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+        }
+        
 		p.repaint();
 	}
 }

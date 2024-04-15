@@ -19,10 +19,10 @@ public class TextBox {
 	}
 	
 	String getProcessingLine() {
-		return "fill(" + stroke.getRed() + ", " + stroke.getGreen() + ", " + stroke.getBlue() + ");\n\ttextSize(" + strokeSize*10 + ");\n\ttext(\"Hello World\", " + bounds.javaShape.getBounds().x + ", " + (bounds.javaShape.getBounds().y) +");";
+		return "fill(" + stroke.getRed() + ", " + stroke.getGreen() + ", " + stroke.getBlue() + ");\n\ttextSize(" + strokeSize*10 + ");\n\ttext(\"" + text + "\", " + bounds.javaShape.getBounds().x + ", " + (bounds.javaShape.getBounds().y) +");";
 	}
 	
 	String getProcessingText() {
-		return "text(\"Hello World\", " + bounds.javaShape.getBounds().x + ", " + (bounds.javaShape.getBounds().y) +");";
+		return "text(\"" + text + "\", " + bounds.javaShape.getBounds().x + ", " + (bounds.javaShape.getBounds().y) +");";
 	}
 }
