@@ -3,6 +3,7 @@ package template.tool;
 import javax.swing.*;
 import java.awt.*;
 import java.util.*;
+import java.net.URI;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -32,12 +33,12 @@ public class GUIFrame extends JFrame implements ActionListener{
 	Base base;
 	
 	//all button icons are souced from: https://www.svgrepo.com/
-	String[][] verticalButtons = {{"bRect", "Rectangle", "/data/rectangle-wide-svgrepo-com.png"},
-									{"bEllipse", "Ellipse", "/data/ellipse-figure-form-geometry-graphic-line-svgrepo-com.png"},
-									{"bTriangle", "Triangle", "/data/triangle-hand-drawn-shape-outline-svgrepo-com.png"},
-									{"bArc", "Arc", "/data/circle-three-quarters-svgrepo-com.png"},
+	String[][] verticalButtons = {{"bRect", "Rectangle", "/data/rectangleoption.png"},
+									{"bEllipse", "Ellipse", "/data/ellipseoptions.png"},
+									{"bTriangle", "Triangle", "/data/triangleoptions.png"},
+									{"bArc", "Arc", "/data/arcoptions.png"},
 									{"bQuad", "Quad", "/data/parallelogram-figure-form-geometry-graphic-line-svgrepo-com.png"}, 
-									{"bLine", "Line", "/data/line-tool-svgrepo-com.png"},
+									{"bLine", "Line", "/data/lineoptions.png"},
 									{"bPoint", "Point", "/data/dots-svgrepo-com.png"},
 									{"bText", "Text", "/data/text-svgrepo-com.png"}};
 	
@@ -48,11 +49,13 @@ public class GUIFrame extends JFrame implements ActionListener{
 									{"bUndo", "Undo", "/data/undo-left-svgrepo-com.png"},
 									{"bRedo", "Redo", "/data/undo-right-svgrepo-com.png"},
 									{"bDelete", "Delete shape", "/data/delete-svgrepo-com.png"},
+									{"bClear", "Clear canvas", "/data/clear-svgrepo-com.png"},
 									{"bUpdate", "Update drawing from code", "/data/update-svgrepo-com.png"},
 									{"bSelect", "Select shape", "/data/cursor-alt-svgrepo-com.png"},
 									{"bArray", "Group shapes", "/data/value-pointer-svgrepo-com.png"},
 									{"bAnimate", "Animate shape", "/data/stars-svgrepo-com.png"},
-									{"bButton", "Add action", "/data/button-arrow-right-svgrepo-com.png"}};
+									{"bButton", "Add action", "/data/button-arrow-right-svgrepo-com.png"},
+									{"bReadMe", "Documentation", "/data/question-circle-svgrepo-com.png"}};
 	
 	Map<String, JButton> buttons = new HashMap<String, JButton>();
 	
@@ -62,10 +65,10 @@ public class GUIFrame extends JFrame implements ActionListener{
 								{"bSquare", "Square", "/data/square-svgrepo-com.png"}};
 	
 	String[][] ellipseButtons = {{"bEllipse", "Ellipse", "/data/ellipse-figure-form-geometry-graphic-line-svgrepo-com.png"},
-								{"bCircle", "Circle", "data/circle-svgrepo-com.png"}};
+								{"bCircle", "Circle", "/data/circle-svgrepo-com.png"}};
 	
 	String[][] lineButtons = {{"bLine", "Line", "/data/line-tool-svgrepo-com.png"}, 
-								{"bCurve", "Curver line", "/data/vector-arc-svgrepo-com.png"}, 
+								{"bCurve", "Curved line", "/data/vector-arc-svgrepo-com.png"}, 
 								{"bBezier", "Bezier curve", "/data/spline-svgrepo-com.png"}};
 	
 	String[][] arcButtons = {{"bChord", "Chord arc", "/data/chordarc.png"},
@@ -146,8 +149,6 @@ public class GUIFrame extends JFrame implements ActionListener{
 		confirmText.setActionCommand("confirmText");
 		confirmText.addActionListener(this);
         setText.add(confirmText);
-		
-	    f.setSize(new Dimension(canvasSize[0] + 20, canvasSize[1] + 20));
 	    
 	    initEditor();
 	    
@@ -218,6 +219,10 @@ public class GUIFrame extends JFrame implements ActionListener{
 	    }
 	    
 	    updateDrawingFromCode(editorLines);
+	    
+	    if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+        }
 	}
 	
 	public void updateSize(int width, int height) {
@@ -233,7 +238,7 @@ public class GUIFrame extends JFrame implements ActionListener{
         	  buttons.put(buttonNames[i][0], new JButton());
         	  try {
 	        	  Image icon = ImageIO.read(getClass().getResource(buttonNames[i][2]));
-	        	  buttons.get(buttonNames[i][0]).setIcon(new ImageIcon(icon.getScaledInstance(20, 20,  java.awt.Image.SCALE_SMOOTH)));
+	        	  buttons.get(buttonNames[i][0]).setIcon(new ImageIcon(icon.getScaledInstance(25, 25,  java.awt.Image.SCALE_SMOOTH)));
         	  } catch (Exception e) {
         		    System.out.println(e);
     		  }
@@ -255,63 +260,62 @@ public class GUIFrame extends JFrame implements ActionListener{
     }
 	
 	public void updateDrawingFromCode(ArrayList<String> editorLines) {
-		ArrayList<String> codeList = new ArrayList<String>();
-		ArrayList<ShapeBuilder> shapesToRemove = new ArrayList<ShapeBuilder>();
-		for (ShapeBuilder shape: p.shapes) {
-			if (editorLines.contains(shape.processingShape)) {
-				codeList.add(shape.processingShape);
-			} else {
-				shapesToRemove.add(shape);
-			}
-		}
+		p.shapes.clear();
+		p.textBoxes.clear();
+		Color nextFill = Color.WHITE;
+		Color nextStrokeColour = Color.BLACK;
+		int nextStrokeSize = 1;
 		
-		for (ShapeBuilder shape: shapesToRemove) {
-			p.shapes.remove(shape);
-		}
-
-		for (String line: editorLines) {
-			if (!codeList.contains(line) || codeList.size() == 0) {
-				Color nextFill = Color.WHITE;
-				Color nextStrokeColour = Color.BLACK;
-				int nextStrokeSize = 1;
-				ShapeBuilder shapeToAdd = new ShapeBuilder(line, null, null);
-				if (shapeToAdd.javaShape != null) {
-					shapeToAdd.fill = nextFill;
-					shapeToAdd.stroke = nextStrokeColour;
-					shapeToAdd.strokeSize = nextStrokeSize;
-					p.shapes.add(shapeToAdd);
-				}
-				else if (line.contains("fill(")) {
-					String[] RGBValues = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",3);
+		for (String line: editorLines) {				
+			ShapeBuilder shapeToAdd = new ShapeBuilder(line, null, null);
+			if (shapeToAdd.javaShape != null) {
+				shapeToAdd.fill = nextFill;
+				shapeToAdd.stroke = nextStrokeColour;
+				shapeToAdd.strokeSize = nextStrokeSize;
+				p.shapes.add(shapeToAdd);
+			}
+			else if (line.contains("fill(")) {
+				String[] RGBValues = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",3);
+				if (RGBValues.length != 3) {
+					nextFill = new Color(Integer.valueOf(RGBValues[0]), Integer.valueOf(RGBValues[0]), Integer.valueOf(RGBValues[0]));
+				} else {
 					nextFill = new Color(Integer.valueOf(RGBValues[0]), Integer.valueOf(RGBValues[1]), Integer.valueOf(RGBValues[2]));
 				}
-				else if (line.contains("stroke(")) {
-					String[] RGBValues = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",3);
-					if (RGBValues.length != 3) {
-						nextStrokeColour = new Color(Integer.valueOf(RGBValues[0]),Integer.valueOf(RGBValues[0]),Integer.valueOf(RGBValues[0]));
-					} else {
-						nextStrokeColour = new Color(Integer.valueOf(RGBValues[0]), Integer.valueOf(RGBValues[1]), Integer.valueOf(RGBValues[2]));
-					}
-				}
-				else if (line.contains("strokeWeight(")) {
-					nextStrokeSize = Integer.valueOf(line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0]);
-				}
-				else if (line.contains("background(")) {
-					String[] RGBValues = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",3);
-					if (RGBValues.length != 3) {
-						p.setBackground(new Color(Integer.valueOf(RGBValues[0]),Integer.valueOf(RGBValues[0]),Integer.valueOf(RGBValues[0])));
-					} else {
-						p.setBackground(new Color(Integer.valueOf(RGBValues[0]), Integer.valueOf(RGBValues[1]), Integer.valueOf(RGBValues[2])));
-					}
-				}
-				else if (line.contains("size(")) {
-					String[] size = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",2);
-					p.resize(Integer.valueOf(size[0]),Integer.valueOf(size[1]));
-				}	
 			}
+			else if (line.contains("stroke(")) {
+				String[] RGBValues = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",3);
+				if (RGBValues.length != 3) {
+					nextStrokeColour = new Color(Integer.valueOf(RGBValues[0]),Integer.valueOf(RGBValues[0]),Integer.valueOf(RGBValues[0]));
+				} else {
+					nextStrokeColour = new Color(Integer.valueOf(RGBValues[0]), Integer.valueOf(RGBValues[1]), Integer.valueOf(RGBValues[2]));
+				}
+			}
+			else if (line.contains("strokeWeight(")) {
+				nextStrokeSize = Integer.valueOf(line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0]);
+			}
+			else if (line.contains("text(")) {
+				String[] textValues = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",3);
+				TextBox textBox = new TextBox(textValues[1].replace("\"",""), new Point(Integer.valueOf(textValues[1]),Integer.valueOf(textValues[2])), new Point(Integer.valueOf(textValues[1])+60,Integer.valueOf(textValues[2])+20));
+            	p.textBoxes.add(textBox);
+            	textBox.bounds.stroke = nextStrokeColour;
+            	textBox.bounds.fill = nextStrokeColour;
+            	p.shapes.add(textBox.bounds);
+			}
+			else if (line.contains("background(")) {
+				String[] RGBValues = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",3);
+				if (RGBValues.length != 3) {
+					p.setBackground(new Color(Integer.valueOf(RGBValues[0]),Integer.valueOf(RGBValues[0]),Integer.valueOf(RGBValues[0])));
+				} else {
+					p.setBackground(new Color(Integer.valueOf(RGBValues[0]), Integer.valueOf(RGBValues[1]), Integer.valueOf(RGBValues[2])));
+				}
+			}
+			else if (line.contains("size(")) {
+				String[] size = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",2);
+				p.resize(Integer.valueOf(size[0]),Integer.valueOf(size[1]));
+				f.setSize(new Dimension(Integer.valueOf(size[0])+34,Integer.valueOf(size[1])+62));
+			}			
 		}
 		p.repaint();
-		
 	}
 	
 	@Override
@@ -332,10 +336,28 @@ public class GUIFrame extends JFrame implements ActionListener{
 	        case "bRedo":
 	        	keyListeners.callRedo();
 	        	break;
+	        case "bClear":
+	        	base.getActiveEditor().setText(null);
+	        	initEditor();
+	        	ArrayList<String> initLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
+				updateDrawingFromCode(initLines);
+				p.shapes.clear();
+				if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+	            	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+	            }
+	        	break;
+	        case "bReadMe":
+	        	try {
+	        		java.awt.Desktop.getDesktop().browse(URI.create("https://github.com/veraborvinski/SketchCode/blob/distribution/README.md"));
+				} catch (Exception err) {
+					System.out.println(err);
+				}
+	        	break;
 	        case "bArray":
 	        	p.groupShapes();
 	        	break;
 	        case "bFill":
+	        	keyListeners.deselectAll();
 	        	p.fill = JColorChooser.showDialog(this,"Select a color", Color.WHITE);
 	        	if (p.selectedShapes.size() != 0) {
 		        	p.changeFill(p.fill);
@@ -347,7 +369,10 @@ public class GUIFrame extends JFrame implements ActionListener{
 	        	Color color = JColorChooser.showDialog(this,"Select a color", Color.WHITE);
 	        	if (color != null) {
 		        	int[] newColor = {color.getRed(),color.getGreen(),color.getBlue()};	        	
-			        p.changeFill(color);        	
+			        p.changeFill(color);    
+			        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		            	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		            }
 			        p.repaint();
 	        	}
 	        	break;
@@ -379,8 +404,11 @@ public class GUIFrame extends JFrame implements ActionListener{
 		    	    		p.shapes.get(p.shapes.size()-1).stroke = strokeColor;
 		    	    	}
 	    	    		p.defaultStrokeColour = strokeColor;
-		    	    	p.updateDraw("\t"+"stroke(" + strokeColor.getRed() + ", " + strokeColor.getGreen() + ", " + strokeColor.getBlue() + ");");
+		    	    	p.updateDraw("stroke(" + strokeColor.getRed() + ", " + strokeColor.getGreen() + ", " + strokeColor.getBlue() + ");");
 		    	    }
+		    	    if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		            	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		            }
 		        	p.repaint();
 	        	}
 	        	break;
@@ -410,8 +438,11 @@ public class GUIFrame extends JFrame implements ActionListener{
 	    	    		p.shapes.get(p.shapes.size()-1).strokeSize = newSize;
 	    	    	}
 	    	    	p.defaultStrokeSize = newSize;
-	    	    	p.updateDraw("\t"+"strokeWeight(" + newSize + ");");
+	    	    	p.updateDraw("strokeWeight(" + newSize + ");");
 	    	    }
+	        	if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+	            	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+	            }
 	        	p.repaint();
 	        	break;
 	        case "bStrokeSize":
@@ -435,25 +466,19 @@ public class GUIFrame extends JFrame implements ActionListener{
 	        		p.cursor = new Cursor(Cursor.DEFAULT_CURSOR);
 	        		
 	        		if (buttons.keySet().contains(p.currentEvent)) {
-		        		buttons.get(p.currentEvent).setOpaque(false);
-		        		buttons.get(p.currentEvent).setBackground(Color.LIGHT_GRAY);
-	        		} 
+    					buttons.get(p.currentEvent).setOpaque(false);
+        				buttons.get(e.getActionCommand()).setBackground(Color.LIGHT_GRAY);
+        			}
 	        		
 	        		p.currentEvent = "";
 	        	} else if (p.currentEvent != e.getActionCommand()) {
-		        	if (buttons.keySet().contains(p.currentEvent)) {
-		        		buttons.get(p.currentEvent).setOpaque(false);
-		        		buttons.get(p.currentEvent).setBackground(Color.LIGHT_GRAY);
-	        		} else if (p.currentEvent == "confirmText") {
-	        			buttons.get("bText").setOpaque(false);
-		        		buttons.get("bText").setBackground(Color.LIGHT_GRAY);
-	        		}	
+	        		
 	        		p.cursor = new Cursor(Cursor.CROSSHAIR_CURSOR);
 	        		p.currentEvent = e.getActionCommand();
 	        		
-	        		if (buttons.keySet().contains(p.currentEvent)) {
-	        			buttons.get(e.getActionCommand()).setBackground(Color.GRAY);
-	        		}
+        			if (buttons.keySet().contains(p.currentEvent)){
+        				buttons.get(e.getActionCommand()).setBackground(Color.GRAY);
+        			} 
 	        	}
 	        	p.comboBox = null;
 	        	p.repaint();	

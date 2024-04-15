@@ -101,7 +101,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
         	g2.setColor(shape.fill);
         	g2.fill(shape.javaShape);
 			g2.setColor(shape.stroke);	
-			g2.setStroke(new BasicStroke(shape.strokeSize));			
+			g2.setStroke(new BasicStroke(shape.strokeSize,BasicStroke.CAP_ROUND,BasicStroke.JOIN_MITER));			
         	g2.draw(shape.javaShape);
         	g2.setTransform(old);
         }
@@ -129,10 +129,6 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
     	}
         
         g2.dispose();
-        
-        if (!undoStack.contains(Arrays.asList(base.getActiveEditor().getText().split("\n")))) {
-        	undoStack.add(new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n"))));
-        }
     } 
     
     public void callMenu(MouseEvent e) {
@@ -173,7 +169,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
             	shapes.add(textBox.bounds);
     		}
     		
-    		if (currentEvent != "" && currentEvent != "confirmText" && currentEvent != "bSelect" && currentClass == null) {
+    		if (currentEvent != "" && currentEvent != "confirmText" && currentEvent != "bSelect" ){//&& currentClass != null) {
     			currentShape = new ShapeBuilder(currentEvent, firstPoint, firstPoint);
     			currentShape.fill = defaultColour;
     			currentShape.stroke = defaultStrokeColour;
@@ -197,18 +193,27 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
     		callMenu(e);
     	} else {
     		if (currentEvent != "" && currentEvent != "confirmText" && currentEvent != "bSelect") {
-    			if (currentClass == null) {
-    				if (shapes.size() > 2) {
-	    				if (currentShape.fill != shapes.get(shapes.size()-2).fill) {
+    			if (currentShape.javaShape.getBounds().width < 5 && currentShape.javaShape.getBounds().height < 5 && !currentShape.processingShape.contains("point")){
+    				shapes.remove(currentShape);
+    			} else if (currentClass == null && currentAnimation == null) {
+    				if (shapes.size() > 1) {
+	    				if (currentShape.fill != shapes.get(shapes.indexOf(currentShape)-1).fill) {
 	        				updateDraw(currentShape.getProcessingFill());
+	    				}
+	    				if (currentShape.stroke != shapes.get(shapes.indexOf(currentShape)-1).stroke) {
+	        				updateDraw(currentShape.getProcessingStroke());
+	    				}
+	    				if (currentShape.strokeSize != shapes.get(shapes.indexOf(currentShape)-1).strokeSize) {
+	        				updateDraw(currentShape.getProcessingStrokeSize());
 	    				}
     				}
     				updateDraw(currentShape.processingShape);
     			} else if (currentAnimation == null) {
-    				addAnimation(currentShape); 
-    			} else {
     				updateClass(currentClass, currentShape.processingShape);
     				currentClass = null;
+    			} else {
+    				addAnimation(currentShape); 
+    				currentAnimation = null;
     			}
     			currentShape = null;
     		}
@@ -241,20 +246,25 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 					findSelectedShapes();
 				}
     		}
+            
+            if (!undoStack.contains(Arrays.asList(base.getActiveEditor().getText().split("\n")))) {
+            	undoStack.add(new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n"))));
+            }
     	}
     	repaint();
     }
     
     public void groupShapes() {
-    	findSelectedShapes();
-    	ShapeGroup shapeGroup = new ShapeGroup(selectedShapes, "Group" + String.valueOf(shapeGroups.size()+1));
-    	shapeGroups.add(shapeGroup);
-    	for (ShapeBuilder s: selectedShapes) {
-    		removeProcessingLine("\t" + s.processingShape); 
+    	if (selectedShapes.size() != 0) {
+	    	ShapeGroup shapeGroup = new ShapeGroup(selectedShapes, "Group" + String.valueOf(shapeGroups.size()+1));
+	    	shapeGroups.add(shapeGroup);
+	    	for (ShapeBuilder s: selectedShapes) {
+	    		removeProcessingLine("\t" + s.processingShape); 
+	    	}
+	    	selectedShapes.clear();
+	    	updateDraw(shapeGroup.classCall);
+	    	updateCode(shapeGroup.classBody);
     	}
-    	selectedShapes.clear();
-    	updateDraw(shapeGroup.classCall);
-    	updateCode(shapeGroup.classBody);
     }
     
     public ShapeGroup findShapeGroup(ShapeBuilder s) {
@@ -376,7 +386,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 	    	}
 			else {
 				for (ShapeBuilder shape: shapes) {
-	    			if (shape.javaShape.contains(e.getPoint())) {
+	    			if (shape.containsPoint(e.getPoint())) {
 	    				if (currentClass == null && currentAnimation == null && currentAction == null) {
 		    				if (findShapeGroup(shape) != null) {
 		    					selectedShapes.addAll(findShapeGroup(shape).shapes);
@@ -408,6 +418,10 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 					setBackground(fill);
 					updateBackground(fill);
 				}
+		        
+		        if (!undoStack.contains(Arrays.asList(base.getActiveEditor().getText().split("\n")))) {
+		        	undoStack.add(new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n"))));
+		        }
 	        }
     	}
     }
@@ -463,7 +477,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
     		removeProcessingLine("\t"+shape.processingShape);
     	}
     	
-		String line;
+		String line = "";
 		
 		if (currentAnimation == "bBackAndForth") {
 			line = shape.processingShape.split("\\(")[0] + "(x," + shape.processingShape.split(",",2)[1];
@@ -475,7 +489,11 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 				updateDraw("\n\tif (x == 400 || x == -1){\n\t\txCoefficient = -xCoefficient;\n\t}\n\tx += xCoefficient;");
 			}
 		} else if (currentAnimation == "bUpAndDown") {
-			line = shape.processingShape.split(",")[0] + ", y, " + shape.processingShape.split(",", 3)[2];
+			if (shape.shapeType != "point") {
+				line = shape.processingShape.split(",")[0] + ", y, " + shape.processingShape.split(",", 3)[2];
+			} else {
+				line = shape.processingShape.split(",")[0] + ", y);";
+			}
 			
 			insertProcessingLine("\t"+line, lineNumber);
 			if (!doesAnimationExist(currentAnimation)) {
@@ -484,7 +502,11 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 				updateDraw("\n\tif (y == 400 || y == -1){\n\t\tyCoefficient = -yCoefficient;\n\t}\n\ty += yCoefficient;");
 			}
 		} else {
-			line = shape.processingShape.split(",")[0] + "," + shape.processingShape.split(",")[1] + ", w, h);";
+			if (shape.shapeType != "point" && shape.shapeType != "triangle" && shape.shapeType != "quad" && shape.shapeType != "arc") {
+				line = shape.processingShape.split(",")[0] + "," + shape.processingShape.split(",")[1] + ", w, h);";
+			} else if (shape.shapeType != "point") {
+				line = shape.processingShape.split(",")[0] + "," + shape.processingShape.split(",")[1] + ", w, h," + shape.processingShape.split(",",5)[4];
+			}
 			
 			insertProcessingLine("\t"+line, lineNumber);
 			if (!doesAnimationExist(currentAnimation)) {
@@ -493,6 +515,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 				updateDraw("\n\tif ((h == 200 || h == -200) || h == 0){\n\t\twhCoefficient = -whCoefficient;\n\t}\n\th += whCoefficient;\n\tw += whCoefficient;");
 			}
 		}
+		shape.processingShape = line;
 		
 		currentAnimation = null;
     }
@@ -502,10 +525,10 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
     	base.getActiveEditor().setText(editorLines.get(0));
     	for (int i = 1; i < editorLines.size(); i++) {
     		if (editorLines.get(i).contains("background(")) {
-    			updateDraw("background(" + c.getRed() + ", " + c.getGreen() + ", " + c.getBlue() + ");");
+    			updateCode("\tbackground(" + c.getRed() + ", " + c.getGreen() + ", " + c.getBlue() + ");");
     		}
     		else {
-    			updateDraw(editorLines.get(i));	
+    			updateCode(editorLines.get(i));	
     		}
     	}
     }
@@ -702,7 +725,7 @@ class GUIPanel extends JPanel implements MouseListener, MouseMotionListener{
 				isInDraw = true;
 			}
 			
-			if ((editorLines.get(i+1).contains("}") || editorLines.get(i+1).contains("if(")) && isInDraw){
+			if ((editorLines.get(i+1).contains("}") || editorLines.get(i+1).contains("if")) && isInDraw){
 				updateCode("\t" + newText);
 				isInDraw = false;
 			}

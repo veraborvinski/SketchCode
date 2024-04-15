@@ -2,6 +2,9 @@ package template.tool;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import javax.swing.*;
 
 import processing.app.Base;
@@ -31,6 +34,7 @@ public class PanelMenu implements ActionListener{
 		p = initP;
 		panelMenu.add("Change background").addActionListener( this );
 		panelMenu.add("Paste").addActionListener( this );
+		panelMenu.add("Select all").addActionListener( this );
 		panelMenu.add("Rezise canvas").addActionListener( this );
 		panelMenu.add("Rotate").addActionListener( this );
 		panelMenu.add("Flip horizontally").addActionListener( this );
@@ -81,7 +85,14 @@ public class PanelMenu implements ActionListener{
 					p.shapes.add(shapeToPaste);
 					p.updateDraw(shapeToPaste.processingShape);
 				}
+		        
+		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		        }
     			p.repaint();
+				break;
+			case "Select all":
+				p.f.keyListeners.selectAll();
 				break;
 			case "Change background":
 				p.fill = JColorChooser.showDialog(currentComponent,"Select a color", Color.WHITE);
@@ -90,15 +101,23 @@ public class PanelMenu implements ActionListener{
 		        	p.repaint();
 			        p.fill = null;
 	        	}
+	            
+	            if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+	            	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+	            }
 	        	break;
 			case "Rezise canvas":
 				setSize.show(p, currentX , currentY);
 				break;
 			case "confirmSize":
 				if (width.getText() != "" && height.getText() != "") {
-					p.resize(Integer.valueOf(width.getText()),Integer.valueOf(height.getText()));
-					p.repaint();
+					p.f.updateSize(Integer.valueOf(width.getText()),Integer.valueOf(height.getText()));
+					p.f.updateDrawingFromCode(new ArrayList<String>(Arrays.asList(p.f.base.getActiveEditor().getText().split("\n"))));
 				}
+		        
+		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		        }
 				break;
 			case "Rotate":
 				rotationSelector.show(p, currentX , currentY);
@@ -107,6 +126,10 @@ public class PanelMenu implements ActionListener{
 				p.rotateCanvas(rotation.getValue());
 				p.rotation = rotation.getValue();
 				p.repaint();
+		        
+		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		        }
 				break;
 			case "Flip horizontally":
 				p.isFlippedHorizontal = !p.isFlippedHorizontal;
@@ -116,6 +139,10 @@ public class PanelMenu implements ActionListener{
 		    		p.insertProcessingLine("\tscale(1,-1);", position);
 		    		p.insertProcessingLine("\ttranslate(0,-"+p.getHeight()+");", position+1);
 				}
+		        
+		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		        }
 				break;
 			case "Flip vertically":
 				p.isFlippedVertical = !p.isFlippedVertical;
@@ -125,6 +152,10 @@ public class PanelMenu implements ActionListener{
 		    		p.insertProcessingLine("\tscale(-1,1);", position);
 		    		p.insertProcessingLine("\ttranslate(-"+p.getWidth()+",0);", position+1);
 				}
+		        
+		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+		        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+		        }
 				break;
 			case "Zoom":
 				zoomSelector.show(p, currentX , currentY);
@@ -133,6 +164,10 @@ public class PanelMenu implements ActionListener{
 				p.zoom = zoom.getValue();
 				p.repaint();
 	    		p.insertProcessingLine("\tscale("+100/p.zoom+","+100/p.zoom+");", p.findProcessingLineNumber("void draw() {"));
+	            
+	            if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+	            	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+	            }
 				break;
 			default:
 				break;

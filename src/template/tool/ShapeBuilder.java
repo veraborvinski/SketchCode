@@ -116,17 +116,17 @@ public class ShapeBuilder {
 	        case "curve(":
 				firstPoint = new Point(Integer.valueOf(values[2]),Integer.valueOf(values[3]));
 				secondPoint = new Point(Integer.valueOf(values[4]),Integer.valueOf(values[5]));
-				javaShape = new QuadCurve2D.Double(Integer.valueOf(values[2]),Integer.valueOf(values[3]),Integer.valueOf(values[0]),Integer.valueOf(values[1]),Integer.valueOf(values[4]),Integer.valueOf(values[5]));
+				javaShape = new QuadCurve2D.Double(Integer.valueOf(values[2]),Integer.valueOf(values[3]),Integer.valueOf(values[0])-350,Integer.valueOf(values[1])-350,Integer.valueOf(values[4]),Integer.valueOf(values[5]));
 				break;
 	        case "bezier(":
 				firstPoint = new Point(Integer.valueOf(values[2]),Integer.valueOf(values[3]));
 				secondPoint = new Point(Integer.valueOf(values[6]),Integer.valueOf(values[7]));
-				javaShape = new CubicCurve2D.Double(Integer.valueOf(values[2]),Integer.valueOf(values[3]),Integer.valueOf(values[0]),Integer.valueOf(values[1]),Integer.valueOf(values[4]),Integer.valueOf(values[5]),Integer.valueOf(values[6]),Integer.valueOf(values[7]));
+				javaShape = new CubicCurve2D.Double(Integer.valueOf(values[2]),Integer.valueOf(values[3]),Integer.valueOf(values[0])-100,Integer.valueOf(values[1])-100,Integer.valueOf(values[4]),Integer.valueOf(values[5]),Integer.valueOf(values[6]),Integer.valueOf(values[7]));
 				break;
 	        case "point(":
 				firstPoint = new Point(Integer.valueOf(values[0]),Integer.valueOf(values[1]));
 				secondPoint = new Point(Integer.valueOf(values[0]),Integer.valueOf(values[1]));
-				javaShape = new Ellipse2D.Double(Integer.valueOf(values[0]),Integer.valueOf(values[1]),1,1);
+				javaShape = new Rectangle(Integer.valueOf(values[0]),Integer.valueOf(values[1]),1,1);
 				break;
 		}
 	}
@@ -218,13 +218,13 @@ public class ShapeBuilder {
 	            break;
 	        
 	        case "curve":
-	        	processingShape = shapeType + "(" + (x1-1) + ", " + (y1-1) + ", " + x1 + ", " + y1 + ", " + x2 + ", " + y2 + ", " + x2+1 + ", " + y2+1 +");";
-	        	javaShape = new QuadCurve2D.Double(x1,y1,x1-1,y1-1,x2,y2);
+	        	processingShape = shapeType + "(" + (x1+300) + ", " + (y1+300) + ", " + x1 + ", " + y1 + ", " + x2 + ", " + y2 + ", " + x2 + ", " + y2  +");";
+	        	javaShape = new QuadCurve2D.Double(x1,y1,x1-50,y1-50,x2,y2);
 	            break;
 	        
 	        case "bezier":
-	        	processingShape = shapeType + "(" + (x1-1) + ", " + (y1-1) + ", " + x1 + ", " + y1 + ", " + x2+1 + ", " + y2+1 + ", " + x2 + ", " + y2 + ");";
-	        	javaShape = new CubicCurve2D.Double(x1,y1,x1-1,y1-1,x2+1,y2+1,x2,y2);
+	        	processingShape = shapeType + "(" + (x1+50) + ", " + (y1+50) + ", " + x1 + ", " + y1 + ", " + (x2+50) + ", " + (y2+50) + ", " + x2 + ", " + y2 + ");";
+	        	javaShape = new CubicCurve2D.Double(x1,y1,x1-50,y1-50,x2+50,y2+50,x2,y2);
 	            break;
 	 
 	        case  "point":
@@ -275,5 +275,17 @@ public class ShapeBuilder {
 				break;
 		}
 		createShape();
+	}
+	
+	public Boolean containsPoint(Point point) {
+		Rectangle pointBounds = new Rectangle(firstPoint.x-2,firstPoint.y-2,4,4);
+		
+		if (shapeType != "point" && shapeType != "line") {
+			return javaShape.contains(point);
+		} else if (shapeType == "point") {
+			return pointBounds.contains(point);
+		} else {
+			return javaShape.intersects(pointBounds);
+		}
 	}
 }
