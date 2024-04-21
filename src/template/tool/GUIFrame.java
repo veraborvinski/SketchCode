@@ -1,3 +1,33 @@
+/**
+ * The SketchCode tool is used to generate a Processing sketch from a GUI.
+ * 
+ * Author: Vera Borvinski
+ * Matriculation number: 2421818
+ * 
+ * This tool uses the Processing tool template from https://github.com/processing/processing-tool-template
+ *
+ * ##copyright##
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General
+ * Public License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+ * Boston, MA  02111-1307  USA
+ *
+ * @author   Vera Borvinski
+ * @modified 20/4-24
+ * @version  1.0
+ */
+
 package template.tool;
 
 import javax.swing.*;
@@ -28,10 +58,17 @@ import java.awt.Cursor;
 
 import processing.app.Base;
 
+/** 
+* The GUIFrame class creates the main JFrame of the tool.
+* This class was based on the GUIFrame class from https://github.com/joelmoniz/Shape-Sketch
+* 
+* @author Vera Borvinski
+*/
 @SuppressWarnings("serial")
 public class GUIFrame extends JFrame implements ActionListener{
 	Base base;
 	
+	//Specifications for toolbar buttons and their popups
 	//all button icons are souced from: https://www.svgrepo.com/
 	String[][] verticalButtons = {{"bRect", "Rectangle", "/data/rectangleoption.png"},
 									{"bEllipse", "Ellipse", "/data/ellipseoptions.png"},
@@ -56,10 +93,6 @@ public class GUIFrame extends JFrame implements ActionListener{
 									{"bAnimate", "Animate shape", "/data/stars-svgrepo-com.png"},
 									{"bButton", "Add action", "/data/button-arrow-right-svgrepo-com.png"},
 									{"bReadMe", "Documentation", "/data/question-circle-svgrepo-com.png"}};
-	
-	Map<String, JButton> buttons = new HashMap<String, JButton>();
-	
-	Map<String, ButtonMenu> buttonMenus = new HashMap<String, ButtonMenu>();
 	
 	String[][] rectButtons = {{"bRectangle", "Rectangle", "/data/rectangle-wide-svgrepo-com.png"},
 								{"bSquare", "Square", "/data/square-svgrepo-com.png"}};
@@ -86,17 +119,21 @@ public class GUIFrame extends JFrame implements ActionListener{
 	String[][] buttonButtons = {{"bLink", "Open website", "/data/link-svgrepo-com.png"},
 			{"bAnimation", "Trigger animation", "/data/stars-svgrepo-com.png"}};
 	
+	Map<String, JButton> buttons = new HashMap<String, JButton>();	
+	Map<String, ButtonMenu> buttonMenus = new HashMap<String, ButtonMenu>();
+	
+	//Popup used to create textboxes
 	JPopupMenu setText = new JPopupMenu("SetText");
 	JTextField text = new JTextField( 35 );
 	JButton confirmText = new JButton();
-
-    Map<Integer,String> codeHistory = new HashMap<Integer,String>();
     
+	//The inital values of the drawing
     int[] canvasSize = {400,400};
     int backgroundColor = 255;
     int strokeColor = 0;
     int currentStrokeSize = 1;
     
+    //creating the main components of the tool
     GUIPanel p = new GUIPanel(canvasSize[0], canvasSize[1],this);
     JPopupMenu strokeSelector = new JPopupMenu("StrokeSize");
     JSlider strokeSize = new JSlider(0, 50, 1);
@@ -104,6 +141,11 @@ public class GUIFrame extends JFrame implements ActionListener{
     JButton confirmStroke = new JButton();
     KeyListeners keyListeners = new KeyListeners(p,this);
 	
+    /** 
+     * This method is used show the main JFrame and create everything on screen. 
+     * @param base This is the processing application. 
+     * @return void Nothing. 
+     */
 	public void showGUI(Base base) { 
 		this.base = base;
 		p.base = base;
@@ -153,6 +195,8 @@ public class GUIFrame extends JFrame implements ActionListener{
 	    initEditor();
 	    
 	    f.setDefaultCloseOperation(DISPOSE_ON_CLOSE); 
+	    
+	    //update the Processing sketch's size when the window is resized
 	    p.addComponentListener(new ComponentAdapter() {
 	    	    public void componentResized(ComponentEvent e){
 	    	    	updateSize(e.getComponent().getWidth(), e.getComponent().getHeight());
@@ -163,6 +207,10 @@ public class GUIFrame extends JFrame implements ActionListener{
 	    f.setVisible(true); 
     }
 	
+	/** 
+	* This adds the default lines to the processing editor if they are not already there.
+	* @return void Nothing. 
+	*/
 	public void initEditor() {
 		ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
 		Boolean isBackgroundSet = false;
@@ -171,6 +219,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 		Boolean isSetupSet = false;
 		Boolean isDrawSet = false;
 		
+		//ckeck whether setup and draw functions are initialised correctly
 		if (editorLines.size() > 0) {
 	    	for (String line: editorLines) {
 			    if (line.contains("background(")) {
@@ -197,6 +246,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 		
 		updateSize(canvasSize[0], canvasSize[1]);
 		
+		//Fill in missing values
 		if (!isBackgroundSet) {
 	    	p.insertProcessingLine("\tbackground(" + backgroundColor + ");", 2);
 	    }
@@ -218,13 +268,21 @@ public class GUIFrame extends JFrame implements ActionListener{
 	    	p.updateCode("}");
 	    }
 	    
+	    //make canvas match the Processing sketch setup
 	    updateDrawingFromCode(editorLines);
 	    
+	    //save a reference of the blank drawing
 	    if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
         	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
         }
 	}
 	
+	/** 
+    * Updates the size of the Processing sketch. 
+    * @param width The width to set the Processing sketch to.
+    * @param height The height to set the Processing sketch to
+    * @return void Nothing. 
+    */
 	public void updateSize(int width, int height) {
 		ArrayList<String> editorLines = new ArrayList<String>(Arrays.asList(base.getActiveEditor().getText().split("\n")));
     	base.getActiveEditor().setText("void setup() {\n\tsize(" + width + ", " + height + ");");
@@ -233,24 +291,38 @@ public class GUIFrame extends JFrame implements ActionListener{
     	}
 	}
 	
+	/** 
+    * This method is used to create the upper and left toolbars of the JFrame. 
+    * @param tb The toolbar to add buttons to.
+    * @param buttonNames A 2D array containing the names and specification of the button to add
+    * @return JToolBar The toolbar with the buttons added. 
+    */
 	public JToolBar createToolBar(JToolBar tb, String[][] buttonNames) { 
         for (int i = 0; i < buttonNames.length; i++) {
         	  buttons.put(buttonNames[i][0], new JButton());
+        	  
+        	  //try to add the button's icon to it
         	  try {
 	        	  Image icon = ImageIO.read(getClass().getResource(buttonNames[i][2]));
 	        	  buttons.get(buttonNames[i][0]).setIcon(new ImageIcon(icon.getScaledInstance(25, 25,  java.awt.Image.SCALE_SMOOTH)));
         	  } catch (Exception e) {
         		    System.out.println(e);
     		  }
+        	  
+        	  //style button and add tooltipse
         	  buttons.get(buttonNames[i][0]).setActionCommand(buttonNames[i][0]);
         	  buttons.get(buttonNames[i][0]).addActionListener(this);
         	  buttons.get(buttonNames[i][0]).setToolTipText(buttonNames[i][1]);
         	  buttons.get(buttonNames[i][0]).setPreferredSize(new Dimension(30, 30));
         	  buttons.get(buttonNames[i][0]).setBackground(Color.LIGHT_GRAY);
         	  buttons.get(buttonNames[i][0]).setOpaque(true);
+        	  
+        	  //Ass button to toolbar
         	  tb.add(buttons.get(buttonNames[i][0]));
         	  tb.setBackground(Color.LIGHT_GRAY);
         	  tb.setOpaque(true);
+        	  
+        	  //add the buttons popup
         	  if (buttonMenus.containsKey(buttonNames[i][0])) {
         		  buttons.get(buttonNames[i][0]).setComponentPopupMenu(buttonMenus.get(buttonNames[i][0]).buttonMenu);
         	  }
@@ -259,65 +331,106 @@ public class GUIFrame extends JFrame implements ActionListener{
         return tb;
     }
 	
+	/** 
+    * This method is used to update the current drawing based on the lines given. 
+    * @param editorLines The current Processing code. 
+    * @return void Nothing. 
+    */
 	public void updateDrawingFromCode(ArrayList<String> editorLines) {
+		//start with a blank canvas
 		p.shapes.clear();
 		p.textBoxes.clear();
+		p.shapeGroups.clear();
+		
+		//set styling to default values
 		Color nextFill = Color.WHITE;
 		Color nextStrokeColour = Color.BLACK;
 		int nextStrokeSize = 1;
+		String currentClass = null;
+		int rotation = 0;
+		int count = 0;
+		p.isFlippedHorizontal = false;
+		p.isFlippedVertical = false;
+		p.rotation = 0;
+		p.zoom = 0;
 		
-		for (String line: editorLines) {				
+		for (String line: editorLines) {
+			//assume the current line is a shape, if it is not possible to build a shape from the line check if it's something else
 			ShapeBuilder shapeToAdd = new ShapeBuilder(line, null, null);
 			if (shapeToAdd.javaShape != null) {
 				shapeToAdd.fill = nextFill;
 				shapeToAdd.stroke = nextStrokeColour;
 				shapeToAdd.strokeSize = nextStrokeSize;
+				shapeToAdd.processingShape = line.replace("\t", "");
+				shapeToAdd.rotation = rotation;
 				p.shapes.add(shapeToAdd);
-			}
-			else if (line.contains("fill(")) {
+				if (currentClass != null) {
+					p.shapeGroups.get(p.shapeGroups.size()-1).shapes.add(shapeToAdd);
+				}
+			} else if (line.contains("fill(")) {
 				String[] RGBValues = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",3);
 				if (RGBValues.length != 3) {
 					nextFill = new Color(Integer.valueOf(RGBValues[0]), Integer.valueOf(RGBValues[0]), Integer.valueOf(RGBValues[0]));
 				} else {
 					nextFill = new Color(Integer.valueOf(RGBValues[0]), Integer.valueOf(RGBValues[1]), Integer.valueOf(RGBValues[2]));
 				}
-			}
-			else if (line.contains("stroke(")) {
+			} else if (line.contains("stroke(")) {
 				String[] RGBValues = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",3);
 				if (RGBValues.length != 3) {
 					nextStrokeColour = new Color(Integer.valueOf(RGBValues[0]),Integer.valueOf(RGBValues[0]),Integer.valueOf(RGBValues[0]));
 				} else {
 					nextStrokeColour = new Color(Integer.valueOf(RGBValues[0]), Integer.valueOf(RGBValues[1]), Integer.valueOf(RGBValues[2]));
 				}
-			}
-			else if (line.contains("strokeWeight(")) {
+			} else if (line.contains("strokeWeight(")) {
 				nextStrokeSize = Integer.valueOf(line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0]);
-			}
-			else if (line.contains("text(")) {
+			} else if (line.contains("text(")) {
 				String[] textValues = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",3);
 				TextBox textBox = new TextBox(textValues[1].replace("\"",""), new Point(Integer.valueOf(textValues[1]),Integer.valueOf(textValues[2])), new Point(Integer.valueOf(textValues[1])+60,Integer.valueOf(textValues[2])+20));
             	p.textBoxes.add(textBox);
             	textBox.bounds.stroke = nextStrokeColour;
             	textBox.bounds.fill = nextStrokeColour;
             	p.shapes.add(textBox.bounds);
-			}
-			else if (line.contains("background(")) {
+			} else if (line.contains("background(")) {
 				String[] RGBValues = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",3);
 				if (RGBValues.length != 3) {
 					p.setBackground(new Color(Integer.valueOf(RGBValues[0]),Integer.valueOf(RGBValues[0]),Integer.valueOf(RGBValues[0])));
 				} else {
 					p.setBackground(new Color(Integer.valueOf(RGBValues[0]), Integer.valueOf(RGBValues[1]), Integer.valueOf(RGBValues[2])));
 				}
-			}
-			else if (line.contains("size(")) {
+			} else if (line.contains("size(")) {
 				String[] size = line.replace(" ", "").split("\\(", 2)[1].split("\\)",2)[0].split(",",2);
 				p.resize(Integer.valueOf(size[0]),Integer.valueOf(size[1]));
 				f.setSize(new Dimension(Integer.valueOf(size[0])+34,Integer.valueOf(size[1])+62));
-			}			
+			} else if (line.contains("class ")) {
+				String className = line.split(" ")[1].replace("{", "");
+				currentClass = className;
+				p.shapeGroups.add(new ShapeGroup(new ArrayList<ShapeBuilder>(), className));
+			} else if (line.contains("rotate(")) {
+				if (line.contains("rotate(-")) {
+					rotation = 0;
+				} else if (editorLines.get(count+1).contains("translate(")) {
+					p.rotation = (int)Math.toDegrees(java.lang.Double.parseDouble(line.split("\\(")[1].split("\\)")[0]));
+				} else {
+					rotation = (int)Math.toDegrees(java.lang.Double.parseDouble(line.split("\\(")[1].split("\\)")[0]));
+				}
+			} else if (line.contains("scale(1,-1);")){
+				p.isFlippedHorizontal = true;
+			} else if (line.contains("scale(-1,1);")) {
+				p.isFlippedVertical = true;
+			} else if (line.contains("scale(")) {
+				p.zoom = Float.parseFloat(line.split("\\(")[1].split(",")[0])*100;
+			}
+			
+			count++;
 		}
 		p.repaint();
 	}
 	
+	/** 
+    * Determines the naxt action after a button of the toolbar has been pressed. 
+    * @param e This current event. 
+    * @return void Nothing. 
+    */
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		switch (e.getActionCommand()) { 
@@ -462,6 +575,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 	        	}
 	        	break;
 	        default:
+	        	//mark shape button as selected
 		        if (p.currentEvent == e.getActionCommand()) {
 	        		p.cursor = new Cursor(Cursor.DEFAULT_CURSOR);
 	        		
@@ -472,7 +586,7 @@ public class GUIFrame extends JFrame implements ActionListener{
 	        		
 	        		p.currentEvent = "";
 	        	} else if (p.currentEvent != e.getActionCommand()) {
-	        		
+	        		keyListeners.deselectAll();
 	        		p.cursor = new Cursor(Cursor.CROSSHAIR_CURSOR);
 	        		p.currentEvent = e.getActionCommand();
 	        		

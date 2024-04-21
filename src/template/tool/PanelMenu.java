@@ -1,3 +1,33 @@
+/**
+ * The SketchCode tool is used to generate a Processing sketch from a GUI.
+ * 
+ * Author: Vera Borvinski
+ * Matriculation number: 2421818
+ * 
+ * This tool uses the Processing tool template from https://github.com/processing/processing-tool-template
+ *
+ * ##copyright##
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General
+ * Public License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+ * Boston, MA  02111-1307  USA
+ *
+ * @author   Vera Borvinski
+ * @modified 20/4-24
+ * @version  1.0
+ */
+
 package template.tool;
 
 import java.awt.*;
@@ -9,6 +39,11 @@ import javax.swing.*;
 
 import processing.app.Base;
 
+/** 
+* The PanelMenu class is used to call a JPopupMenu from the drawing panel.
+* 
+* @author Vera Borvinski
+*/
 @SuppressWarnings("serial")
 public class PanelMenu implements ActionListener{
 	final JPopupMenu panelMenu = new JPopupMenu("panelMenu");
@@ -30,6 +65,10 @@ public class PanelMenu implements ActionListener{
 	int currentX;
 	int currentY;
 	
+	/** 
+     * Constructor for a PanelMenu, adds the menu items and submenus.
+     * @param initP A reference to the drawing.
+     */
 	public PanelMenu(GUIPanel initP){
 		p = initP;
 		panelMenu.add("Change background").addActionListener( this );
@@ -68,6 +107,13 @@ public class PanelMenu implements ActionListener{
 		zoomSelector.add(confirmZoom);
 	}
 	
+	/** 
+     * Shows the menu at the specified location.
+     * @param c The compenent to add the menu to.
+     * @param x The x position to add the menu to.
+     * @param y The y position to add the menu to.
+     * @return void Nothing. 
+     */
 	public void showPanelMenu(Component c, int x, int y) {
 		panelMenu.show(c, x, y);
 		currentComponent = c;
@@ -75,6 +121,11 @@ public class PanelMenu implements ActionListener{
 		currentY = y;
     }
 	
+	/** 
+     * Calls the functionality of the menu item that was clicked.
+     * @param e The ActionEvent that triggered the function.
+     * @return void Nothing. 
+     */
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		switch (e.getActionCommand()) { 
@@ -138,6 +189,9 @@ public class PanelMenu implements ActionListener{
 					int position = p.findProcessingLineNumber("void draw() {");
 		    		p.insertProcessingLine("\tscale(1,-1);", position);
 		    		p.insertProcessingLine("\ttranslate(0,-"+p.getHeight()+");", position+1);
+				} else {
+					p.removeProcessingLine("\tscale(1,-1);");
+					p.removeProcessingLine("\ttranslate(0,-"+p.getHeight()+");");
 				}
 		        
 		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
@@ -151,6 +205,9 @@ public class PanelMenu implements ActionListener{
 					int position = p.findProcessingLineNumber("void draw() {");
 		    		p.insertProcessingLine("\tscale(-1,1);", position);
 		    		p.insertProcessingLine("\ttranslate(-"+p.getWidth()+",0);", position+1);
+				} else {
+					p.removeProcessingLine("\tscale(-1,1);");
+					p.removeProcessingLine("\ttranslate(-"+p.getWidth()+",0);");
 				}
 		        
 		        if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
@@ -161,9 +218,10 @@ public class PanelMenu implements ActionListener{
 				zoomSelector.show(p, currentX , currentY);
 				break;
 			case "confirmZoom":
+				p.removeProcessingLine("\tscale("+p.zoom/100+","+p.zoom/100+");");
 				p.zoom = zoom.getValue();
 				p.repaint();
-	    		p.insertProcessingLine("\tscale("+100/p.zoom+","+100/p.zoom+");", p.findProcessingLineNumber("void draw() {"));
+	    		p.insertProcessingLine("\tscale("+p.zoom/100+","+p.zoom/100+");", p.findProcessingLineNumber("void draw() {"));
 	            
 	            if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
 	            	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
