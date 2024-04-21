@@ -1,3 +1,33 @@
+/**
+ * The SketchCode tool is used to generate a Processing sketch from a GUI.
+ * 
+ * Author: Vera Borvinski
+ * Matriculation number: 2421818
+ * 
+ * This tool uses the Processing tool template from https://github.com/processing/processing-tool-template
+ *
+ * ##copyright##
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General
+ * Public License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+ * Boston, MA  02111-1307  USA
+ *
+ * @author   Vera Borvinski
+ * @modified 20/4-24
+ * @version  1.0
+ */
+
 package template.tool;
 
 import javax.swing.*;
@@ -9,15 +39,30 @@ import java.awt.event.KeyEvent;
 
 import processing.app.Base;
 
+/** 
+* The KeyListeners class is used to call actions after a key is pressed.
+* 
+* @author Vera Borvinski
+*/
 public class KeyListeners implements KeyListener{
 	GUIPanel p;
 	GUIFrame f;
 	
+	/** 
+     * The constructor of the KeyListeners class, adds the references to the JPanel, and JFrame.
+     * @param initPanel The main JPanel.
+     * @param initFrame The main JFrame. 
+     */
 	public KeyListeners(GUIPanel initPanel, GUIFrame initFrame) {
     	p = initPanel;
     	f = initFrame;
     }
 	
+	/** 
+     * Calls an action based on what keys are pressed.
+     * @param e The KeyEvent.
+     * @return void Nothing. 
+     */
 	@Override
 	public void keyPressed(KeyEvent e) {
 		if(e.getKeyCode() == KeyEvent.VK_Z && e.getModifiersEx() == KeyEvent.CTRL_DOWN_MASK) {
@@ -120,25 +165,48 @@ public class KeyListeners implements KeyListener{
             	newPoint.x -= 10;
                 p.moveShapes(newPoint,p.selectedShapes,p.comboBox);
             } 
+        	
+        	if (!p.undoStack.contains(Arrays.asList(p.base.getActiveEditor().getText().split("\n")))) {
+	        	p.undoStack.add(new ArrayList<String>(Arrays.asList(p.base.getActiveEditor().getText().split("\n"))));
+	        }
+        	p.repaint();
         }
     }
 	
+	/** 
+     * Function from the KeyListerners library.
+     * @param e The KeyEvent.
+     * @return void Nothing. 
+     */
 	@Override
 	public void keyReleased(KeyEvent e) {
 	
 	}
 	
+	/** 
+     * Function from the KeyListerners library.
+     * @param e The KeyEvent.
+     * @return void Nothing. 
+     */
 	@Override
 	public void keyTyped(KeyEvent e) {
 
 	}
 	
+	/** 
+     * Select all shapes on screen.
+     * @return void Nothing. 
+     */
 	public void selectAll() {
 		p.selectedShapes = p.shapes;
         p.createComboBoxFromSelectedShapes();
         p.repaint();
 	}
 	
+	/** 
+     * Deselect all buttons on the Jrame.
+     * @return void Nothing. 
+     */
 	public void deselectAll() {
 		f.buttons.get("bEllipse").setOpaque(false);
 		f.buttons.get("bEllipse").setBackground(Color.LIGHT_GRAY);
@@ -160,6 +228,10 @@ public class KeyListeners implements KeyListener{
 		p.currentEvent = "";
 	}
 	
+	/** 
+     * Undo changes by reverting to the last save of the Processing code.
+     * @return void Nothing. 
+     */
 	public void callUndo() {
 		if (p.undoStack.size() > 0) {
 			p.redoStack.add(p.undoStack.remove(p.undoStack.size()-1));
@@ -175,6 +247,10 @@ public class KeyListeners implements KeyListener{
 		}
 	}
 	
+	/** 
+     * Redo changes by reverting to the last save of the Processing code.
+     * @return void Nothing. 
+     */
 	public void callRedo() {
 		if (p.redoStack.size() > 0) {
 			p.undoStack.add(p.redoStack.remove(p.redoStack.size()-1));
@@ -190,6 +266,10 @@ public class KeyListeners implements KeyListener{
 		}
 	}
 	
+	/** 
+     * Undo Delete shapes, textboxes, and classes that are currently selected.
+     * @return void Nothing. 
+     */
 	public void callDelete() {
 		if (p.selectedShapes.size() != 0 && p.comboBox != null) {
 			for (ShapeBuilder shape: p.selectedShapes) {

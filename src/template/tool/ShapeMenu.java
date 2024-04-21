@@ -1,3 +1,33 @@
+/**
+ * The SketchCode tool is used to generate a Processing sketch from a GUI.
+ * 
+ * Author: Vera Borvinski
+ * Matriculation number: 2421818
+ * 
+ * This tool uses the Processing tool template from https://github.com/processing/processing-tool-template
+ *
+ * ##copyright##
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General
+ * Public License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+ * Boston, MA  02111-1307  USA
+ *
+ * @author   Vera Borvinski
+ * @modified 20/4-24
+ * @version  1.0
+ */
+
 package template.tool;
 
 import java.awt.*;
@@ -7,6 +37,11 @@ import java.util.*;
 
 import processing.app.Base;
 
+/** 
+* The ShapeMenu class is used to call a JPopupMenu from one or more shapes.
+* 
+* @author Vera Borvinski
+*/
 @SuppressWarnings("serial")
 public class ShapeMenu implements ActionListener{
 	final JPopupMenu shapeMenu = new JPopupMenu("ShapeMenu");
@@ -46,6 +81,10 @@ public class ShapeMenu implements ActionListener{
 	
 	ShapeGroup currentClass = null;
 	
+	/** 
+     * The constructor of a ShapeMenu, adds all the default menu items and submenus.
+     * @param initP A reference to the drawing. 
+     */
 	public ShapeMenu(GUIPanel initP){
 		p = initP;
 		
@@ -83,6 +122,14 @@ public class ShapeMenu implements ActionListener{
         setComment.add(confirmComment);
 	}
 	
+	/** 
+     * Shows the menu at the specified location and adds relevant menu items.
+     * @param c The compenent to add the menu to.
+     * @param x The x position to add the menu to.
+     * @param y The y position to add the menu to.
+     * @param shapes The shapes the menu is being called from.
+     * @return void Nothing. 
+     */
 	public void showShapeMenu(Component c, int x, int y, ArrayList<ShapeBuilder> shapes) {
 		shapeMenu.show(c, x, y);
 		currentComponent = c;
@@ -135,6 +182,11 @@ public class ShapeMenu implements ActionListener{
 		}
     }
 	
+	/** 
+     * Calls the functionality of the menu item that was clicked.
+     * @param e The ActionEvent that triggered the function.
+     * @return void Nothing. 
+     */
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		switch (e.getActionCommand()) { 
